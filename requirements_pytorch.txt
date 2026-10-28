@@ -1,0 +1,22 @@
+--extra-index-url https://download.pytorch.org/whl/cu128
+torch==2.7.1
+torchvision==0.22.1
+transformers==4.53.2
+timm==1.0.15
+open_clip_torch==2.32.0
+pycocotools==2.0.10
+nltk==3.9.1
+spacy==3.8.7
+scipy==1.15.3
+numpy==2.2.6
+pandas==2.3.1
+matplotlib==3.10.3
+pillow==11.3.0
+tqdm==4.67.1
+requests==2.32.4
+ipykernel
+jupyter
+nbconvert
+pytest
+en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl
+ultralytics==8.3.170

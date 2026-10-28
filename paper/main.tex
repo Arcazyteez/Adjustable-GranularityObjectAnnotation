@@ -1,0 +1,48 @@
+\documentclass[twocolumn,a4paper,dvipdfmx]{ieicejsp}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{textcomp}
+\usepackage{latexsym}
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage{amsmath, amssymb}
+\usepackage{bm}
+\usepackage{upgreek}
+\usepackage{caption}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{tikz}
+\usepackage{xcolor}
+\usepackage{url}
+\usetikzlibrary{positioning, arrows.meta}
+
+\captionsetup{font=small}
+\DeclareMathOperator*{\argmax}{arg\,max}
+% 修正箇所を赤字で示すコマンド
+\newcommand{\add}[1]{{\color{red}#1}}
+
+\title{
+    {\bf 物体領域検出とカテゴリアノテーションの分離に基づく，\\WordNetを用いた粒度可変物体アノテーション}
+    {\normalsize \\ Adjustable-Granularity Object Annotation via Decoupled Region Detection and WordNet-Guided Category Annotation}
+}
+\author{
+    著者名 \\ Author Name
+}
+\affliate{%
+    所属機関名 \\
+    Affiliation \\
+}
+
+\begin{document}
+\maketitle
+
+\input{sections/00_abstract}
+\input{sections/01_introduction}
+\input{sections/02_related_work}
+\input{sections/03_method}
+\input{sections/04_experiments}
+\input{sections/05_discussion}
+\input{sections/06_conclusion}
+\input{sections/07_references}
+
+\end{document}

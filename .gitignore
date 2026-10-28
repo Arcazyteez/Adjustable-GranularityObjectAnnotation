@@ -1,0 +1,21 @@
+# Python
+.venv_*/
+__pycache__/
+*.py[cod]
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Test
+.pytest_cache/
+
+# Machine Learning
+datasets/
+outputs/
+
+# API tokens
+tokens.json
+
+# VS Code
+.vscode/*
+!.vscode/settings.json

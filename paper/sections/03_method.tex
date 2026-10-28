@@ -1,0 +1,134 @@
+\section{提案手法}
+\subsection{全体設計}
+画像$ {\mathbf X} \in {\mathbb R}^{H \times W \times C} $が与えられたとき，本手法の目的は，画像中の物体らしい領域それぞれに対し，その物体を表す単語をアノテーションすることである．
+ここで，$ H $，$ W $，$ C $はそれぞれ画像の高さ，幅，チャンネル数である．
+本手法は，以下の2つの処理を明確に分離する．
+
+\begin{itemize}
+    \item {\bf 物体領域の検出}：画像$ {\mathbf X} $を入力とし，物体候補領域に対応するバウンディングボックスの集合$ \{ {\mathbf b}_1, \ldots, {\mathbf b}_K \} $を1回の推論で出力する．ここで，$ {\mathbf b}_k \in {\mathbb R}^4 $は$ k $番目の領域の左上と右下の座標，$ K $は検出数である．
+    \item {\bf カテゴリのアノテーション}：各領域$ k $について，バウンディングボックス$ {\mathbf b}_k $に合わせて切り出したクロップ$ {\mathbf X}_k $を入力とし，与えられた候補語彙集合の中から対応する単語をアノテーションする．
+\end{itemize}
+
+物体領域の検出は候補語彙に依存しない1回の推論で完結するため，カテゴリのアノテーションの候補語彙集合や粒度を変更する場合でも，物体領域の検出を再実行する必要がない．
+3.4節で述べるWordNetを用いた粒度可変アノテーションは，この性質を利用する．
+提案するパイプラインの概要を図\ref{fig_pipeline}に示す．
+
+\begin{figure}[t]
+    \centering
+    \begin{tikzpicture}[
+            node distance=4mm and 5mm,
+            box/.style={draw, rounded corners, align=center, font=\scriptsize, minimum height=7mm, inner sep=2pt},
+            arr/.style={-{Stealth[length=2mm]}}
+        ]
+        \node[box] (img) {画像 ${\mathbf X}$};
+        \node[box, below=of img] (detr) {DETRによる\\ボックス検出\\（1回のみ）};
+        \node[box, below=of detr] (crop) {クロップ ${\mathbf X}_k$\\（正方形化）};
+        \node[box, right=12mm of crop] (vlm) {VLMによる分類\\$ \hat{v}_k^{(d)} = \argmax f({\mathbf X}_k; {\mathbb V}_k^{(d)}) $};
+        \node[box, above=of vlm] (wn) {WordNet：\\${\mathbb V}_k^{(d+1)} = $ 下位語集合};
+        \node[box, above=of wn] (out) {出力 $ (\hat{v}_k^{(0)}, \hat{v}_k^{(1)}, \ldots) $};
+        \draw[arr] (img) -- (detr);
+        \draw[arr] (detr) -- node[left, font=\scriptsize] {${\mathbf b}_k$} (crop);
+        \draw[arr] (crop) -- (vlm);
+        \draw[arr] (vlm.north east) ++(-3mm,0) -- node[right, font=\scriptsize] {$\hat{v}_k^{(d)}$} ([xshift=-3mm]wn.south east);
+        \draw[arr] ([xshift=3mm]wn.south west) -- node[left, font=\scriptsize] {$d \leftarrow d + 1$} ([xshift=3mm]vlm.north west);
+        \draw[arr] (wn) -- node[right, font=\scriptsize] {${\mathbb V}_k^{(d+1)} = \emptyset$} (out);
+    \end{tikzpicture}
+    \caption{提案するアノテーションパイプラインの概要．DETRによるボックス検出は1回のみ実行し，WordNetの下位語を新たな候補語彙として同一のクロップに対しカテゴリのアノテーションを繰り返す．}
+    \label{fig_pipeline}
+\end{figure}
+
+\subsection{物体領域の検出}
+物体領域の検出には，DETR\cite{ref_DETR}を用いる．
+DETRはCOCOの91クラスで学習済みであるが，本研究ではDETRが予測するカテゴリラベルは使用せず，各出力の「物体なし」以外のクラス確率の最大値を検出スコアとし，検出スコアが閾値$ \theta $以上のバウンディングボックス$ \{ {\mathbf b}_1, \ldots, {\mathbf b}_K \} $のみを利用する．
+これにより，DETRが学習していない未知のカテゴリの物体であっても，検出さえされれば後段のVLMによって開語彙のカテゴリをアノテーションできる．
+
+\subsection{視覚言語モデルによるカテゴリのアノテーション}
+各領域$ k $に対応する単語をアノテーションするために，候補語彙集合$ {\mathbb V} $上のスコアを出力するVLM
+
+\begin{equation}
+    f( \cdot \, ; {\mathbb V}) : {\mathbb R}^{H' \times W' \times C} \to [0, 1]^{|{\mathbb V}|}
+    \label{eq_vlm}
+\end{equation}
+
+\noindent
+を用いる．
+ここで，$ |{\mathbb V}| $は候補語彙数であり，$ f({\mathbf X}; {\mathbb V}) $の第$ v $成分$ f({\mathbf X}; {\mathbb V})_v $は，語彙中の単語$ v $が画像$ {\mathbf X} $に対して当てはまる度合いを表す．
+$ H' $，$ W' $は$ f $への入力画像の高さ・幅である．
+カテゴリのアノテーションは，クロップ$ {\mathbf X}_k $に対する$ f $の出力が最大となる単語を選ぶことで行い，そのときの出力値を確信度$ c_k $とする．
+
+\begin{equation}
+    \hat{v}_k = \argmax_{v \in {\mathbb V}} f({\mathbf X}_k; {\mathbb V})_v, \quad
+    c_k = f({\mathbf X}_k; {\mathbb V})_{\hat{v}_k}
+    \label{eq_argmax}
+\end{equation}
+
+$ f $への入力を画像全体とした場合，画像中に同一カテゴリの物体が複数存在する場合や，対象と無関係な背景中の物体の情報が$ f $の出力に混入し，対象の物体に対するアノテーションが不正確になる．
+そこで本研究では，領域$ k $のバウンディングボックス$ {\mathbf b}_k $にちょうど合わせて切り出したクロップを$ f $に入力する．
+ただし，一般的なVLMの前処理は入力画像の短辺を所定の解像度にリサイズした後に中央の正方形を切り出すため，細長いクロップをそのまま入力すると物体の両端が失われる．
+そこで本研究では，クロップを黒で正方形にパディングした画像
+
+\begin{equation}
+    {\mathbf X}_k = \mathrm{Pad}( \mathrm{Crop}({\mathbf X}, {\mathbf b}_k) )
+    \label{eq_crop}
+\end{equation}
+
+\noindent
+を$ f $に入力する．
+ここで，$ \mathrm{Crop}({\mathbf X}, {\mathbf b}) $は画像$ {\mathbf X} $から$ {\mathbf b} $の範囲を切り出す関数，$ \mathrm{Pad}(\cdot) $は長辺に合わせて上下または左右を黒で埋めて正方形にする関数である．
+パディングはボックス外の画像の内容を含まないため，周辺の物体が写り込むことはない．
+以降，パディングを行わずにクロップをそのまま入力する方式をcenter，(\ref{eq_crop})の方式をpadと呼ぶ．
+
+\subsection{WordNetによる粒度可変アノテーション}
+本手法の中心的な特徴は，物体領域の検出とカテゴリのアノテーションが分離されていることを利用し，同一のクロップ$ {\mathbf X}_k $に対して候補語彙集合を変えながら繰り返しカテゴリのアノテーションを行うことで，段階的に粒度の細かい分類を実現する点にある．
+
+候補語彙集合としてCOCOの80クラス$ {\mathbb V}^{(0)} $を用いた第1段階のアノテーションにより，(\ref{eq_argmax})から単語$ \hat{v}_k^{(0)} $を得る．
+単語$ v $に対応するWordNetのSynsetを$ \mathrm{synset}(v) $，Synset $ s $の直接の下位語の集合を$ \mathrm{Hyponyms}(s) $とする．
+深さ$ d \geq 1 $における候補語彙集合を，1つ浅い段階で選ばれたSynsetの下位語集合
+
+\begin{equation}
+    {\mathbb V}_k^{(d)} = \mathrm{Hyponyms}\bigl( \mathrm{synset}( \hat{v}_k^{(d-1)} ) \bigr)
+    \label{eq_hyponym}
+\end{equation}
+
+\noindent
+とし，この候補語彙集合を用いて同一のクロップ$ {\mathbf X}_k $に対し(\ref{eq_argmax})を再度適用することで，単語$ \hat{v}_k^{(d)} $と確信度$ c_k^{(d)} $を得る．
+この処理を，$ {\mathbb V}_k^{(d)} = \emptyset $となるか，利用者が指定した最大深さに達するまで繰り返す．
+最終的な出力は，粗い粒度から細かい粒度への単語の列$ ( \hat{v}_k^{(0)}, \hat{v}_k^{(1)}, \ldots ) $と，各段階の確信度$ ( c_k^{(0)}, c_k^{(1)}, \ldots ) $の組である．
+本実装では，COCOの各クラス名に対応するSynsetを定義文を確認して手動で定め，各下位語Synsetの先頭のレンマ名を候補語とする．
+
+\subsection{視覚言語モデル $ f $ の実装}
+(\ref{eq_vlm})を満たす具体的なモデル$ f $として，本研究では性質の異なる2種類の実装を比較する．
+
+{\bf ResNet50-IN1k（閉域モデル）}：ImageNet-1k\cite{ref_ImageNet}で学習済みのResNet-50\cite{ref_ResNet}であり，1000クラスに対する確率ベクトル$ {\mathbf p}({\mathbf X}) \in [0, 1]^{1000} $を出力する．
+候補語$ v $の末尾の語をレンマ化した上で，クラス名と完全一致するクラスの集合を$ {\mathbb M}(v) $とし，
+
+\begin{equation}
+    f({\mathbf X}; {\mathbb V})_v =
+    \begin{cases}
+        \max_{j \in {\mathbb M}(v)} p_j({\mathbf X}) & ({\mathbb M}(v) \neq \emptyset) \\
+        0 & ({\mathbb M}(v) = \emptyset)
+    \end{cases}
+    \label{eq_resnet}
+\end{equation}
+
+\noindent
+とする．
+ここで，$ p_j({\mathbf X}) $は$ {\mathbf p}({\mathbf X}) $の第$ j $成分である．
+このモデルは，カテゴリのアノテーションにオープンボキャブラリなVLMが必要であることを検証するための比較対象として用いる．
+
+{\bf CLIP-RN50，CLIP-ViT-B/32（オープンボキャブラリモデル）}：CLIP\cite{ref_CLIP}は画像エンコーダ$ g_I $とテキストエンコーダ$ g_T $から構成される．
+候補語$ v $を``a photo of a $ \{v\} $''という形式のプロンプト$ t(v) $に埋め込み，
+
+\begin{equation}
+    f({\mathbf X}; {\mathbb V})_v =
+    \frac{\exp \bigl( \tau \cos( g_I({\mathbf X}), g_T(t(v)) ) \bigr)}
+         {\sum_{u \in {\mathbb V}} \exp \bigl( \tau \cos( g_I({\mathbf X}), g_T(t(u)) ) \bigr)}
+    \label{eq_clip}
+\end{equation}
+
+\noindent
+を$ f $の出力とする．
+ここで，$ \cos(\cdot, \cdot) $はコサイン類似度，$ \tau $は学習済みの温度パラメータ（$ \tau = 100 $）である．
+(\ref{eq_clip})はソフトマックスであるため，候補語彙が1語のみの場合は画像によらず$ f = 1 $となることに注意する．
+画像エンコーダがResNet-50ベースのCNNであるCLIP-RN50と，Vision Transformer（ViT）\cite{ref_ViT}であるCLIP-ViT-B/32の2種類を用いる．
+4.2節の比較評価を経て，以降の実験ではCLIP-ViT-B/32をカテゴリのアノテーションのための代表的なVLMとして用いる．

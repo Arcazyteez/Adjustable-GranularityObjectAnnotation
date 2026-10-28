@@ -1,0 +1,324 @@
+\section{実験}
+\subsection{共通設定}
+特に断らない限り，定量評価にはCOCO 2017 Validation\cite{ref_COCO}の5000枚から，乱数シード42で再現可能な形でランダムサンプリングした500枚の画像を用いた．
+500枚に含まれるiscrowd=0のGTインスタンスは3206件である．
+DETRはResNet-50をバックボーンとする学習済みモデル（facebook/detr-resnet-50），CLIPはOpenCLIP\cite{ref_OpenCLIP}で提供されるOpenAIの学習済みモデル，ResNet50-IN1kはtorchvisionのIMAGENET1K\_V1の重みを用いた．
+推論はNVIDIA GeForce RTX 4070 Ti（12GB）上で実施し，いずれの実験もピークのGPUメモリ使用量は3GB未満であった．
+本研究の手法は学習を伴わないため，すべての実験は学習済みモデルの推論のみで構成される．
+
+\subsection{カテゴリのアノテーションにおけるオープンボキャブラリ性の必要性}
+語彙数が限定的なResNet50-IN1kと，オープンボキャブラリな語彙表現力を持つCLIP-RN50，CLIP-ViT-B/32を比較した．
+この評価では，画像全体を$ f $に入力し，スコアの上位$ k $語の集合$ {\mathbb R}_k $と画像の正解語集合$ {\mathbb G} $から，画像ごとのPrecisionとRecallを
+
+\begin{equation}
+    \mathrm{P@}k = \frac{|{\mathbb R}_k \cap {\mathbb G}|}{k}, \quad
+    \mathrm{R@}k = \frac{|{\mathbb R}_k \cap {\mathbb G}|}{|{\mathbb G}|}
+    \label{eq_pr_at_k}
+\end{equation}
+
+\noindent
+により計算し，画像間で平均した．
+候補語彙集合をCOCOの80クラス$ {\mathbb V}_A $とし，画像中に存在するGTカテゴリの集合を正解とするタスクA（閉域評価）と，500枚のGTキャプションからspaCy\cite{ref_spaCy}（en\_core\_web\_sm）で抽出した名詞・動詞のレンマのユニーク集合$ {\mathbb V}_B $（1371語）を候補語彙とし，各画像のキャプション由来の語集合を正解とするタスクB（広域評価）を設定した．
+GTが空の画像を除き，タスクAでは491枚，タスクBでは500枚を評価した．
+統計的検定には，画像単位で対応付けられた指標値に対するWilcoxon符号付き順位検定\cite{ref_Wilcoxon}と，画像単位のブートストラップリサンプリング（$ B = 1000 $）による95\%信頼区間\cite{ref_Bootstrap}を用いた．
+
+\begin{table}[t]
+    \centering
+    \caption{タスクA（閉域評価）とタスクB（広域評価）における画像単位の単語推定精度．}
+    \label{tab_vlm_comparison}
+    \small
+    \begin{tabular}{cccccc}
+        \toprule
+        タスク & 手法 & P@1 & R@1 & P@5 & R@5 \\
+        \midrule
+        \multirow{3}{*}{A} & ResNet50-IN1k & 0.216 & 0.091 & 0.069 & 0.123 \\
+                           & CLIP-RN50     & 0.855 & 0.431 & 0.316 & 0.659 \\
+                           & CLIP-ViT-B/32 & 0.855 & 0.433 & 0.328 & 0.687 \\
+        \midrule
+        \multirow{3}{*}{B} & ResNet50-IN1k & 0.294 & 0.024 & 0.100 & 0.041 \\
+                           & CLIP-RN50     & 0.528 & 0.045 & 0.334 & 0.139 \\
+                           & CLIP-ViT-B/32 & 0.534 & 0.045 & 0.352 & 0.148 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\columnwidth]{figures/fig_vlm_comparison.pdf}
+    \caption{ResNet50-IN1kとCLIPの指標の比較．誤差棒は画像単位のブートストラップ95\%信頼区間である．}
+    \label{fig_vlm_comparison}
+\end{figure}
+
+表\ref{tab_vlm_comparison}と図\ref{fig_vlm_comparison}に結果を示す．
+ResNet50-IN1kとCLIP系の間には，タスクA・タスクBの全指標において統計的に有意な差が認められた．
+p値は最大でもタスクBのR@1における$ 2.2 \times 10^{-12} $であった．
+ResNet50-IN1kはCOCOのクラス名の多くと一致するImageNetのクラスを持たないため，例えば``person''に対するスコアは常に0となる．
+この結果は，カテゴリのアノテーションには固定のクラス集合に縛られないVLMが必要であることを示している．
+
+一方，CLIP-RN50とCLIP-ViT-B/32の間では，P@1とR@1には有意な差が認められなかった（$ p \geq 0.53 $）．
+P@5とR@5ではCLIP-ViT-B/32がわずかに高く，有意な差が認められた（タスクAのR@5で$ p = 6.3 \times 10^{-4} $，タスクBのP@5で$ p = 2.8 \times 10^{-3} $）．
+両CLIPの差は，ResNet50-IN1kとの差と比べて1桁以上小さい．
+この結果は，$ f $の性能差において「学習手法・語彙設計（クラス分類か，対照学習によるオープンボキャブラリ化か）」の要因が「モデル構造（CNNかViTか）」の要因よりも支配的であることを示唆している．
+
+\subsection{物体領域検出モデルの選択}
+本研究ではカテゴリに依存しない検出のみを行うDETRを物体領域の検出に採用する．
+この選択が位置検出精度の観点からも妥当であることを確認するため，DETRと，オープンボキャブラリ物体検出モデルであるOWL-ViT（owlvit-base-patch32）\cite{ref_OWLViT}，Grounding DINO（grounding-dino-tiny）\cite{ref_GDINO}の3手法を比較した．
+OWL-ViTとGrounding DINOには，COCOの80クラス名をテキストクエリとして与え，予測カテゴリを捨ててクラス間でNMS（IoU 0.5）を行うことで，クラス非依存のボックス集合とした．
+検出スコアの閾値はOWL-ViTを0.1，Grounding DINOをbox 0.35・text 0.25とし，DETRは$ \theta \in \{0.5, 0.7, 0.9\} $を比較した．
+評価には，500枚のうちGTインスタンスが2〜3件の画像をサンプリング順に走査し，GTインスタンスの合計が10件となる最初の4枚の組を用いた．
+評価指標は，GTインスタンスに対しIntersection over Union（IoU）が0.5以上の提案が存在する割合（Recall@IoU0.5）と，GTインスタンスごとの提案との最良IoUの平均値（平均最良IoU）である．
+
+\begin{table}[t]
+    \centering
+    \caption{物体領域検出モデルの比較（4画像，GTインスタンス10件）．RecallはRecall@IoU0.5である．}
+    \label{tab_detectors}
+    \footnotesize
+    \setlength{\tabcolsep}{3pt}
+    \begin{tabular}{lcccc}
+        \toprule
+        手法 & 閾値 & 平均提案数 & Recall & 平均最良IoU \\
+        \midrule
+        DETR           & 0.5  & 2.25 & {\bf 0.800} & \add{0.705} \\
+        DETR           & 0.7  & 1.75 & 0.700 & 0.669 \\
+        DETR           & 0.9  & 1.50 & 0.600 & 0.583 \\
+        OWL-ViT        & 0.1  & 1.50 & 0.500 & 0.517 \\
+        Grounding DINO & 0.35 & 1.50 & 0.500 & 0.546 \\
+        \add{YOLO11x} & \add{0.25} & \add{2.25} & \add{0.700} & \add{0.719} \\
+        \add{YOLOv8x} & \add{0.25} & \add{2.25} & \add{0.800} & \add{{\bf 0.767}} \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+表\ref{tab_detectors}に結果を示す．
+平均提案数をそろえた条件（DETRの$ \theta = 0.9 $）でも，DETRのRecall@IoU0.5と平均最良IoUはOWL-ViTおよびGrounding DINOと同等以上であった．
+3手法ともRecallが1.0に達しない原因を調べたところ，画像面積の0.3\%しかない遠方の車と，画像のほぼ全体（面積比98\%）を占める食卓のGTが，全手法で検出されていなかった．
+したがって，位置検出精度の観点からOWL-ViTやGrounding DINOを用いる利点は認められない．
+一方，OWL-ViTとGrounding DINOは候補カテゴリ集合を検出処理の入力として必要とするため，カテゴリの粒度を変更するたびに検出処理そのものを再実行する必要がある．
+DETRはカテゴリに依存しない検出を1回行えばよく，同一の検出結果を後段の処理全体で再利用できる．
+本研究ではこの設計上の利点に基づき，DETRを採用する．
+\add{なお，4.8節で用いるYOLO11xとYOLOv8x（検出スコアの閾値0.25）を同じ4画像で評価したところ，Recall@IoU0.5はそれぞれ0.700，0.800，平均最良IoUは0.719，0.767であり，DETR（$ \theta = 0.5 $）と同程度であった．}
+ただし，4画像・10インスタンスによる比較であり，統計的な結論を得るには評価規模の拡大が必要である．
+
+\subsection{カテゴリのアノテーションの精度}
+提案するパイプライン全体としてのカテゴリアノテーション精度を評価した．
+500枚に対しDETRを1回ずつ実行し，検出ボックスとGTボックスをハンガリアン法\cite{ref_Hungarian}によりIoU 0.5以上で1対1に対応付けた組を評価インスタンスとした．
+候補語彙集合をCOCOの80クラスとし，各インスタンスのクロップに(\ref{eq_argmax})を適用して，推定単語がGTカテゴリと一致する割合（Top-1正解率）と，上位5語にGTカテゴリが含まれる割合（Top-5正解率）を計算した．
+検出スコアの閾値$ \theta \in \{0.5, 0.7, 0.9, 0.97\} $と，3.3節で述べたクロップの前処理（center，pad）を変化させた．
+
+\begin{table}[t]
+    \centering
+    \caption{パイプライン全体のカテゴリアノテーション精度．$ n $は評価インスタンス数である．}
+    \label{tab_pipeline_accuracy}
+    \small
+    \setlength{\tabcolsep}{4pt}
+    \begin{tabular}{ccccccc}
+        \toprule
+        \multirow{2}{*}{$ \theta $} & \multirow{2}{*}{前処理} & \multirow{2}{*}{$ n $} & \multicolumn{2}{c}{CLIP-ViT-B/32} & \multicolumn{2}{c}{CLIP-RN50} \\
+        & & & Top-1 & Top-5 & Top-1 & Top-5 \\
+        \midrule
+        0.5  & center & 2343 & 0.481 & 0.778 & 0.367 & 0.649 \\
+        0.7  & center & 2217 & 0.488 & 0.783 & 0.371 & 0.655 \\
+        0.9  & center & 1892 & 0.506 & 0.804 & 0.389 & 0.681 \\
+        0.97 & center & 1519 & 0.525 & 0.830 & 0.408 & 0.709 \\
+        \midrule
+        0.5  & pad    & 2343 & 0.560 & 0.855 & 0.460 & 0.740 \\
+        0.7  & pad    & 2217 & 0.568 & 0.858 & 0.467 & 0.747 \\
+        0.9  & pad    & 1892 & 0.587 & 0.874 & 0.484 & 0.776 \\
+        0.97 & pad    & 1519 & {\bf 0.604} & {\bf 0.894} & 0.512 & 0.808 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\columnwidth]{figures/fig_pipeline_accuracy.pdf}
+    \caption{DETRの検出スコアの閾値に対するカテゴリアノテーション精度．破線はcenter，実線はpadである．}
+    \label{fig_pipeline_accuracy}
+\end{figure}
+
+表\ref{tab_pipeline_accuracy}と図\ref{fig_pipeline_accuracy}に結果を示す．
+CLIP-ViT-B/32，$ \theta = 0.97 $，padの設定で，Top-1正解率0.604，Top-5正解率0.894が得られた．
+CLIPの2モデルでは，すべての閾値においてpadはcenterよりTop-1正解率が0.08〜0.10高かった．
+例えば$ \theta = 0.97 $のCLIP-ViT-B/32では，padによって正解に転じたインスタンスが217件，逆に不正解に転じたインスタンスが97件であった．
+クラス別では，bottleの正解率が0.344から0.844へ，carの正解率が0.378から0.581へ向上した．
+図\ref{fig_crop_preprocess}に例を示す．
+縦長のボトルのクロップはcenterではラベル部分だけが残り``book''と推定されたが，padでは全体形状が保たれて``bottle''と推定された．
+また，閾値を高くするほど正解率は単調に向上した．
+これは，検出スコアの高い，すなわち明瞭に写った物体のみが評価対象として残るためと考えられる．
+なお，同じパイプラインにResNet50-IN1kを用いた場合のTop-1正解率は全条件で0.09以下であり，4.2節の結論と整合する．
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\columnwidth]{figures/fig_crop_preprocess.pdf}
+    \caption{クロップの前処理によるVLMへの入力の違い．左からクロップ，centerでVLMに入力される領域，padの入力であり，見出しは推定単語と確信度である．}
+    \label{fig_crop_preprocess}
+\end{figure}
+
+一方，人物クラスの正解率は前処理によらず低く，$ \theta = 0.97 $でcenterが0.377，padが0.383であった．
+人物は評価インスタンスの34\%を占め，主な誤りはperson → baseball bat（38件），skateboard（27件），tie（26件），tennis racket（24件）であった．
+これは，人物が持っている物や身に着けている物に対してCLIPが強く反応するためであり，前処理では解消されない誤りである．
+
+\subsection{WordNetによる粒度可変アノテーションにおける確信度の評価}
+3.4節で述べたWordNet階層を用いた粒度可変アノテーションについて，各深さにおけるVLMの確信度を評価した．
+COCOの80クラス（深さ0）についてはGTカテゴリとの正誤を判定できるが，それより細かい粒度についてはCOCOにGTが存在せず正誤を判定できない．
+そこで，4.4節の最良の設定（CLIP-ViT-B/32，$ \theta = 0.97 $，pad）において深さ0の推定がGTカテゴリと一致した917件を対象に，深さを増すにつれて確信度がどのように変化するかを調べた．
+最大深さは設けず，下位語集合が空になるまで細分化を繰り返した．
+
+\begin{table}[b]
+    \centering
+    \caption{WordNet階層の深さごとの統計．単一は候補語彙が1語のみの段階の数，除外は単一の段階を除いた平均確信度である．}
+    \label{tab_depth}
+    \footnotesize
+    \setlength{\tabcolsep}{3.5pt}
+    \begin{tabular}{cccccc}
+        \toprule
+        深さ$ d $ & インスタンス数 & 平均候補数 & 平均確信度 & 単一 & 除外 \\
+        \midrule
+        0 & 917 & 80.0  & 0.642 & 0   & 0.642 \\
+        1 & 784 & 108.8 & 0.442 & 80  & 0.378 \\
+        2 & 328 & 6.2   & 0.715 & 110 & 0.571 \\
+        3 & 54  & 14.5  & 0.577 & 10  & 0.481 \\
+        4 & 18  & 5.7   & 0.755 & 9   & 0.511 \\
+        5 & 4   & 10.8  & 0.406 & 0   & 0.406 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\columnwidth]{figures/fig_depth_confidence.pdf}
+    \caption{WordNet階層の深さごとの平均確信度（棒，左軸，誤差棒は標準偏差）とインスタンス数（折れ線，右軸，対数）．}
+    \label{fig_depth_confidence}
+\end{figure}
+
+表\ref{tab_depth}と図\ref{fig_depth_confidence}に結果を示す．
+深さ0から深さ1にかけて，平均確信度は0.642から0.442へ大きく低下した．
+深さ1では，候補語彙数がCOCOの80クラスから平均108.8語へ増加し，かつ視覚的に類似した細かいカテゴリ間の識別が求められる．
+特に\texttt{person.n.01}の直接の下位語は398語あり，深さ1の候補数の平均を押し上げている．
+深さ2以降の平均確信度は0.715，0.577，0.755と変動しており，深さ1のように単調に低下する傾向は見られない．
+しかし，(\ref{eq_clip})より候補語彙が1語のみの段階では確信度が必ず1となる．
+このような段階は深さ1以降の全1188段階のうち209段階（約18\%）あり，特に深さ2では328段階中110段階を占めた．
+これらを除いた平均確信度は，深さ1で0.378，深さ2で0.571，深さ3で0.481であり，深さ2以降の見かけの確信度の高さの一部は単一候補の分岐によるものである．
+また，深さ3以降のインスタンス数は数件〜数十件と急減するため，これらの深さにおける確信度の変動を一般的な傾向として解釈することはできない．
+深さ2以降のインスタンス数の急減は，大多数のCOCOカテゴリのWordNet下位語ツリーが浅いことを反映している．
+
+\subsection{COCO以外の語を含む実画像へのアノテーション}
+本手法の開語彙性がCOCOの80クラスという評価用データセットの語彙に限定されないことを確認するため，COCOに含まれない語を主要な被写体とする実画像に対するアノテーションを実施した．
+第1段階の候補語彙集合として，COCOの80クラスに加え，penguin，helicopter，kangaroo，camel，lighthouse等，COCOに含まれない22語を手動で追加した計102語からなる語彙集合を用いた．
+評価対象の画像には，Wikimedia Commonsで公開されている，ペンギン，ヘリコプター，ラクダ，カンガルー，灯台の写真6枚を用いた．
+灯台については構図の異なる2枚を用いた．
+DETRの閾値は$ \theta = 0.5 $，前処理はpadとした．
+
+\begin{figure*}[t]
+    \centering
+    \includegraphics[width=0.95\textwidth]{figures/fig_open_vocab.pdf}
+    \caption{COCO以外の語を含む実画像へのアノテーション結果．各ボックスに各段階の推定単語と確信度を示す．画像はWikimedia Commons（CC BY 2.0，CC0，CC BY-SA 3.0/4.0）より取得した．}
+    \label{fig_open_vocab}
+\end{figure*}
+
+図\ref{fig_open_vocab}に結果を示す．
+ペンギン，ヘリコプター，ラクダ，カンガルーの4枚については，DETRが物体領域を検出し，第1段階でいずれも正しい語（``penguin''，``helicopter''，``camel''，``kangaroo''）がアノテーションされた．
+主要被写体の確信度は0.74〜0.99であった．
+さらに下位語の段階では，ラクダの画像で``camel'' → ``Arabian camel''（確信度0.78）という妥当な細分化が得られた．
+一方，アデリーペンギンの画像では，候補に``adelie''が含まれるにもかかわらず``emperor penguin''や``jackass penguin''が選ばれ，細分化は不正確であった．
+灯台の画像については，2枚のいずれにおいても灯台の塔そのものは検出されなかった．
+1枚目では塔の隣の家屋2棟が検出され，それらに``lighthouse''（確信度0.41，0.45）が付与された．
+2枚目では検出スコア0.5以上のボックスが1件も出力されなかった．
+これは，DETRがカテゴリに依存しない検出器として利用されている場合でも，その領域提案の性質はCOCOの学習データの分布から完全には独立ではなく，COCOのいずれのカテゴリとも視覚的に大きく異なる物体に対しては検出自体に失敗し得ることを示している．
+
+また，ヘリコプターの画像では，機体の``helicopter''（確信度0.99）に加え，吊り下げられた車両の小領域が``backpack''（確信度0.28）→ ``kitbag''とアノテーションされた．
+この領域は候補語彙中に適切な語が存在しないため，最も類似度の高い無関係な語が選択されたと考えられる．
+開語彙アノテーションにおいて，候補語彙に正解語が含まれない領域への対処が今後の課題であることを示している．
+
+\subsection{定性的結果}
+図\ref{fig_coco_qualitative}に，COCOの画像に対する階層的アノテーションの結果を示す．
+猫の領域は``cat'' → ``domestic cat''（確信度0.95）と妥当に細分化された．
+一方，キリンの画像では6領域すべてが``giraffe''の下位語段階で``okapi''（キリン科の近縁種であるオカピ）に細分化された．
+これは\texttt{giraffe.n.01}の下位語がokapiの1語のみであり，候補選択が実質的に機能していないためである．
+同様に，象の画像では``Indian elephant''の唯一の下位語である``white elephant''（アルビノのインドゾウ）が，熊の画像では``American black bear''の唯一の下位語である``cinnamon bear''が，いずれも確信度1.00で選ばれた．
+4.5節で定量的に示したとおり，このような単一候補の分岐は例外的なものではなく，okapi（28件），spindlelegs（24件），moped（18件）等，COCOの評価インスタンス全体にわたって再現している．
+
+\begin{figure*}[t]
+    \centering
+    \includegraphics[width=0.95\textwidth]{figures/fig_coco_qualitative.pdf}
+    \caption{WordNetによる粒度可変アノテーションの定性的結果．左から，象，キリン，熊，犬と猫とソファの画像である．}
+    \label{fig_coco_qualitative}
+\end{figure*}
+
+\begingroup
+\color{red}
+\subsection{閉域物体検出モデルYOLOとの比較}
+提案手法の第1段階は，COCOの80クラスを候補語彙とするため，COCOの80クラスで学習した閉域物体検出モデルと同じ語彙でアノテーションを行う．
+そこで，YOLO自体の語彙であるCOCOの80クラスを用いて，提案手法とYOLOを比較した．
+YOLOには，Ultralytics\cite{ref_Ultralytics}の学習済みモデルであるYOLO11n，YOLO11m，YOLO11x，YOLOv8xを用いた．
+これらはCOCO train2017で学習されており，評価に用いるval2017は学習データに含まれない．
+YOLOの検出スコアの閾値は既定値の0.25に加えて0.5と0.7を比較し，NMSのIoU閾値は既定値の0.7とした．
+4.4節と同じ500枚に対し，YOLOの検出ボックスとGTボックスをハンガリアン法によりIoU 0.5以上で1対1に対応付け，YOLOが出力したクラスによるTop-1正解率と，80クラスのスコアの上位5件によるTop-5正解率を計算した．
+また，対応付けられるインスタンスの数は手法や閾値によって異なるため，GTインスタンス全体のうち正しいカテゴリでアノテーションされた割合を正命名率
+
+\begin{equation}
+    r = \frac{N_{\mathrm{correct}}}{N_{\mathrm{GT}}}
+    \label{eq_annotation_recall}
+\end{equation}
+
+\noindent
+として計算した．
+ここで，$ N_{\mathrm{correct}} $はTop-1の推定がGTカテゴリと一致したインスタンス数，$ N_{\mathrm{GT}} $はGTインスタンスの総数（3206件）である．
+
+\begin{table}[t]
+    \centering
+    \caption{YOLOと提案手法のカテゴリアノテーション精度（COCOの80クラス）．閾値は提案手法では$ \theta $，YOLOでは検出スコアの閾値，$ r $は正命名率である．}
+    \label{tab_yolo_comparison}
+    \footnotesize
+    \setlength{\tabcolsep}{3pt}
+    \begin{tabular}{lccccc}
+        \toprule
+        手法 & 閾値 & $ n $ & Top-1 & Top-5 & $ r $ \\
+        \midrule
+        提案手法          & 0.5  & 2343 & 0.560 & 0.855 & 0.410 \\
+        提案手法          & 0.97 & 1519 & 0.604 & 0.894 & 0.286 \\
+        \midrule
+        YOLO11n          & 0.25 & 1717 & 0.957 & 0.996 & 0.513 \\
+        YOLO11m          & 0.25 & 2115 & 0.976 & 0.998 & 0.644 \\
+        YOLO11x          & 0.25 & 2210 & 0.981 & 0.999 & {\bf 0.676} \\
+        YOLO11x          & 0.7  & 1474 & {\bf 0.993} & 0.997 & 0.456 \\
+        YOLOv8x          & 0.25 & 2220 & 0.971 & 0.999 & 0.672 \\
+        \midrule
+        YOLO11x + CLIP   & 0.25 & 2210 & 0.565 & 0.860 & 0.390 \\
+        YOLO11x + CLIP   & 0.7  & 1474 & 0.604 & 0.907 & 0.278 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=\columnwidth]{figures/fig_yolo_comparison.pdf}
+    \caption{正命名率（横軸）と，対応付けられたインスタンスにおけるTop-1正解率（縦軸）の関係．YOLOは検出スコアの閾値0.25，0.5，0.7，提案手法は$ \theta = 0.5, 0.7, 0.9, 0.97 $の結果である．}
+    \label{fig_yolo_comparison}
+\end{figure}
+
+表\ref{tab_yolo_comparison}と図\ref{fig_yolo_comparison}に結果を示す．
+COCOの80クラスの範囲内では，YOLOのTop-1正解率は0.957〜0.993であり，提案手法の0.560〜0.604を大きく上回った．
+正命名率もYOLO11xの0.676に対し提案手法は0.410であり，YOLOの方が高い．
+両手法が検出した共通のGTインスタンスに限定して比較しても，YOLO11x（閾値0.25）と提案手法（$ \theta = 0.97 $）に共通する1480件において，Top-1正解率はYOLO11xが0.989，提案手法が0.609であった．
+YOLO11xのみが正解した件数は570件，提案手法のみが正解した件数は8件であり，McNemar検定で有意な差が認められた（$ p < 10^{-150} $）．
+人物クラスに限ると，YOLO11xの正解率は0.998であるのに対し，提案手法は0.379であり，4.4節で述べた人物クロップの誤りが差の大きな部分を占める．
+ただし，人物以外のクラスでも，YOLO11xが0.984，提案手法が0.732と差があった．
+
+この差が検出器と分類器のいずれに起因するかを切り分けるため，YOLO11xの検出ボックスのクロップをpadの前処理でCLIP-ViT-B/32に入力して分類する組合せ（YOLO11x + CLIP）を評価した．
+その結果，Top-1正解率は0.565〜0.604となり，インスタンス数が同程度の提案手法とほぼ一致した．
+例えば，YOLO11x + CLIPの閾値0.7（1474件）と提案手法の$ \theta = 0.97 $（1519件）は，いずれもTop-1正解率が0.604であった．
+したがって，COCOの80クラスの範囲内でのYOLOとの差は検出器ではなく，COCOの80クラスで教師あり学習されたYOLOの分類と，ゼロショットのCLIPによる分類との精度の差に起因する．
+
+\begin{figure*}[t]
+    \centering
+    \includegraphics[width=0.95\textwidth]{figures/fig_yolo_open_vocab.pdf}
+    \caption{COCO以外の語を含む実画像に対するYOLO11x（検出スコアの閾値0.25）の検出結果．各ボックスにYOLOが出力したクラスと検出スコアを示す．}
+    \label{fig_yolo_open_vocab}
+\end{figure*}
+
+一方，図\ref{fig_yolo_open_vocab}に示すとおり，4.6節のCOCO以外の語を含む実画像に対しては，YOLO11xはペンギンを``bird''，ラクダを``dog''，カンガルーを``bear''と``sheep''，ヘリコプターを``airplane''とアノテーションした．
+YOLOは学習した80クラスの語しか出力できないため，これらの物体を正しく命名することは原理的にできない．
+同じ画像に対し，提案手法は``penguin''，``camel''，``kangaroo''，``helicopter''を正しくアノテーションしている（図\ref{fig_open_vocab}）．
+また，灯台の画像2枚では，YOLO11xも検出スコア0.25以上のボックスを1件も出力しなかった．
+\endgroup
