@@ -37,6 +37,9 @@ flowchart LR
 | `programs/ex004_open_vocab_qualitative/` | 論文4.6節・4.7節：COCO外の語を含む実画像（Wikimedia Commons）とCOCO画像の階層的アノテーションの定性結果 |
 | `tests/` | `pytest` によるテスト（評価指標，WordNet処理） |
 | `paper/` | 実験結果をまとめた和文論文（`main.tex`，章ごとの `sections/*.tex`，`figures/`，コンパイル済みの `main.pdf`） |
+| `slides_object_annotation.pptx` / `.pdf` | 研究発表スライド（18枚，`.ai/ai-pptx-kit/templates/research.pptx` を元に作成）と，`.ai/pptx-render` でレンダリングしたPDF |
+| `slides/build_slides.py` | スライドを生成するスクリプト（テンプレートを展開してOOXMLを直接書き込む．数式はpandocでLaTeXからOMMLへ変換） |
+| `slides/media/` | スライド専用に作成した画像（YOLOと提案手法の検出結果の例） |
 | `paper/make_figures.py` | `outputs/` の結果から論文用の図を作成し `paper/figures/` に保存する |
 | `visualize_result.ipynb` | `outputs/` を走査して表・図を生成する |
 | `.orders/`，`.reports/` | 作業指示と作業報告 |
@@ -129,12 +132,25 @@ cd programs/ex005_coco_val500_yolo_comparison && ../../.venv_pytorch/bin/python 
 - `.orders/order_002.md`，`.reports/report_002.md`：論文の作成の指示と作業報告
 - `paper/main.pdf`：実験結果をまとめた和文論文（order_003による追記箇所は赤字）
 - `.orders/order_003.md`，`.reports/report_003.md`：YOLOとの比較実験と論文への追記の指示と作業報告
+- `.orders/order_004.md`，`.reports/report_004.md`：発表スライドの作成の指示と作業報告
 
 ### 論文のビルド
 
 ```bash
 .venv_pytorch/bin/python paper/make_figures.py   # outputs/ から図を再生成する
 cd paper && latexmk -pdfdvi -synctex=1 main.tex  # platex + dvipdfmx（latexmkrc）でmain.pdfを生成する
+```
+
+### スライドのビルド
+
+```bash
+# pptx スキルの scripts（add_slide.py，clean.py）の場所を指定する
+export PPTX_SKILL_SCRIPTS=<pptxスキルのディレクトリ>/scripts
+.venv_pytorch/bin/python slides/build_slides.py
+# スタイル確認用のPDF（LibreOfficeは使わない）
+uv venv .ai/pptx-render/.venv_render --python 3.10
+uv pip install --python .ai/pptx-render/.venv_render/bin/python -r .ai/pptx-render/requirements_render.txt
+PYTHONPATH=.ai/pptx-render/programs .ai/pptx-render/.venv_render/bin/python -m pptx_renderer.cli slides_object_annotation.pptx -o slides_object_annotation.pdf
 ```
 
 ## 8. APIキー・設定ファイル

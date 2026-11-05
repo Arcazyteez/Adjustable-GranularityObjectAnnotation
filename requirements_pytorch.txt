@@ -20,3 +20,4 @@ nbconvert
 pytest
 en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl
 ultralytics==8.3.170
+pypandoc_binary==1.15
