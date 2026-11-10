@@ -25,6 +25,8 @@ EX001 = os.path.join(OUT, "ex001_coco_val500_image_word")
 EX003 = os.path.join(OUT, "ex003_coco_val500_pipeline")
 EX004 = os.path.join(OUT, "ex004_open_vocab_qualitative", "CLIP-ViT-B32")
 EX005 = os.path.join(OUT, "ex005_coco_val500_yolo_comparison")
+EX006 = os.path.join(OUT, "ex006_coco_val500_yolo_clip_hybrid")
+EX007 = os.path.join(OUT, "ex007_coco_val_hierarchy_eval")
 VLMS = ["ResNet50-IN1k", "CLIP-RN50", "CLIP-ViT-B32"]
 VLM_LABELS = ["ResNet50-IN1k", "CLIP-RN50", "CLIP-ViT-B/32"]
 COLORS = ["#8c8c8c", "#4C72B0", "#DD8452"]
@@ -266,6 +268,76 @@ def fig_yolo_comparison():
     savefig(fig, "fig_yolo_comparison")
 
 
+def fig_hybrid_qualitative(mode="hybrid_switch_c0.5", conf=0.25):
+    """
+    YOLOとCLIPのハイブリッド構成（ex006）による階層的アノテーションの図を作成する（order_006）．
+    上段はCOCO外の語を含む実画像，下段は図7と同じCOCO画像である．深さ0の決定元を「YOLO:」「CLIP:」で示す．
+
+    Args:
+        mode (str): ex006の構成名．
+        conf (float): YOLOの検出スコアの閾値．
+
+    Returns:
+        None
+    """
+    data_dir = os.path.join(ROOT, "datasets", "ex004_open_vocab_qualitative")
+    open_ann = json.load(open(os.path.join(EX006, mode, f"open_vocab_conf{conf}", "42", "annotations.json")))
+    coco_ann = json.load(open(os.path.join(EX006, mode, f"coco_qualitative_conf{conf}", "42", "annotations.json")))
+    coco = load_coco("instances")
+    # ペンギンの画像はボックスが14件あり単語が重なるため，検出スコアの上位3件のみ単語を表示する
+    panels = [(Image.open(os.path.join(data_dir, f"{n}.jpg")).convert("RGB"), open_ann[n]["regions"], n, 3 if n == "penguin" else None)
+              for n in ["penguin", "helicopter", "camel", "kangaroo"]]
+    panels += [(load_image(coco, coco_ann[n]["meta"]["image_id"]), coco_ann[n]["regions"], f"COCO {coco_ann[n]['meta']['image_id']}", None)
+               for n in ["coco_elephant_556765", "coco_giraffe_507042", "coco_bear_460927", "coco_cat_219578"]]
+    fig, axes = plt.subplots(2, 4, figsize=(7.0, 3.6))
+    for ax, (image, regions, title, max_labels) in zip(axes.flat, panels):
+        ax.imshow(image)
+        ax.set_title(title, fontsize=7)
+        ax.axis("off")
+        labeled = sorted(range(len(regions)), key=lambda j: -regions[j]["det_score"])[:max_labels]
+        for i, region in enumerate(regions):
+            x0, y0, x1, y1 = region["box"]
+            color = plt.cm.tab10.colors[i % 10]
+            ax.add_patch(plt.Rectangle((x0, y0), x1 - x0, y1 - y0, fill=False, edgecolor=color, linewidth=1.2))
+            if i not in labeled:
+                continue
+            head = "CLIP: " if region["root_source"] == "clip" else "YOLO: "
+            text = "\n".join((head if s["depth"] == 0 else "> ") + f"{s['word']} ({s['conf']:.2f})" for s in region["chain"])
+            ax.text(x0 + 2, y0 + 2, text, fontsize=4.5, color="white", va="top", bbox=dict(facecolor=color, alpha=0.8, pad=0.8, lw=0))
+    fig.tight_layout()
+    savefig(fig, "fig_hybrid_qualitative")
+
+
+def fig_stopping(split="lvis_test", conditions=(("proposed", 0.5, "Proposed (θ=0.5)"), ("hybrid", 0.25, "Hybrid (YOLO 0.25)"))):
+    """
+    累積確信度による細分化の停止規則について，LVISのテスト用分割における階層的適合率と再現率の関係を描画する（ex007）．
+
+    Args:
+        split (str): 分割名．
+        conditions (tuple): (手法, 閾値, 凡例) の組．
+
+    Returns:
+        None
+    """
+    stopping = pd.read_csv(os.path.join(EX007, "table_stopping.csv"))
+    fig, ax = plt.subplots(figsize=(3.4, 2.9))
+    for (method, threshold, label), color in zip(conditions, COLORS[1:]):
+        curve = pd.read_csv(os.path.join(EX007, method, f"{split}_th{threshold}", "42", "stopping_curve.csv"))
+        tau, depth = curve[curve["rule"] == "tau"], curve[curve["rule"] == "depth"]
+        ax.plot(tau["lvis_hR"], tau["lvis_hP"], "-o", color=color, ms=3, label=f"{label}: τ")
+        ax.plot(depth["lvis_hR"], depth["lvis_hP"], "s", color=color, mfc="none", ms=5, label=f"{label}: depth limit")
+        selected = stopping[(stopping["method"] == method) & (stopping["threshold"] == threshold) &
+                            (stopping["split"] == split)]["selected_tau"].iloc[0]
+        point = tau[np.isclose(tau["value"], selected)].iloc[0]
+        ax.plot(point["lvis_hR"], point["lvis_hP"], "*", color="red", ms=10)
+        ax.annotate(f"τ={selected:g}", (point["lvis_hR"], point["lvis_hP"]), textcoords="offset points", xytext=(5, 4), fontsize=7)
+    ax.set_xlabel("Hierarchical recall hR")
+    ax.set_ylabel("Hierarchical precision hP")
+    ax.grid(alpha=0.3)
+    ax.legend(fontsize=6, loc="upper center", bbox_to_anchor=(0.5, -0.18), ncol=2)
+    savefig(fig, "fig_stopping")
+
+
 if __name__ == "__main__":
     os.makedirs(FIG_DIR, exist_ok=True)
     fig_vlm_comparison()
@@ -275,4 +347,6 @@ if __name__ == "__main__":
     fig_qualitative()
     fig_yolo_open_vocab()
     fig_yolo_comparison()
+    fig_hybrid_qualitative()
+    fig_stopping()
     print(sorted(os.listdir(FIG_DIR)))

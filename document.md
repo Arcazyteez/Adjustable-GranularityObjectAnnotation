@@ -34,12 +34,14 @@ flowchart LR
 | `programs/ex002_coco_4img_class_agnostic_det/` | 論文4.3節：DETR / OWL-ViT / Grounding DINO のクラス非依存の位置検出精度 |
 | `programs/ex003_coco_val500_pipeline/` | 論文4.4節・4.5節：パイプライン全体のTop-1/Top-5正解率，WordNet深さごとの確信度 |
 | `programs/ex005_coco_val500_yolo_comparison/` | order_003：閉域物体検出モデルYOLO（Ultralytics YOLO11n/m/x，YOLOv8x）とのCOCO 80クラスでの比較，YOLO-box + CLIP，4画像の位置検出精度，COCO外画像での定性比較 |
+| `programs/ex006_coco_val500_yolo_clip_hybrid/` | order_006（論文4.9節）：深さ0をYOLO11x，深さ1以降をCLIP-ViT-B/32とWordNetで行うハイブリッド構成．COCO外の語への切替（`hybrid_switch`，`hybrid_switch_c0.5`）を含む．ex003〜ex005の結果を読み込む．order_008で `hybrid_switch_c{γ}` のCLIPのスコアの計算漏れを修正し，再実行した |
+| `programs/ex007_coco_val_hierarchy_eval/` | order_008（論文4.10節，4.11節）：COCO val2017を検証用・テスト用に分割し，評価数を揃えた比較，深さ0の誤りの伝播，累積確信度による細分化の停止，LVIS v1による深さ1以降の評価（hP，hR，hF）を行う．ex005の YOLODetector を読み込む |
 | `programs/ex004_open_vocab_qualitative/` | 論文4.6節・4.7節：COCO外の語を含む実画像（Wikimedia Commons）とCOCO画像の階層的アノテーションの定性結果 |
-| `tests/` | `pytest` によるテスト（評価指標，WordNet処理） |
+| `tests/` | `pytest` によるテスト（評価指標，WordNet処理，YOLOとの比較の集計，ハイブリッド構成の切替規則と集計） |
 | `paper/` | 実験結果をまとめた和文論文（`main.tex`，章ごとの `sections/*.tex`，`figures/`，コンパイル済みの `main.pdf`） |
-| `slides_object_annotation.pptx` / `.pdf` | 研究発表スライド（18枚，`.ai/ai-pptx-kit/templates/research.pptx` を元に作成）と，`.ai/pptx-render` でレンダリングしたPDF |
+| `slides_object_annotation.pptx` / `.pdf` | 研究発表スライド（26枚，`.ai/ai-pptx-kit/templates/research.pptx` を元に作成．18〜22枚目がハイブリッド構成（ex006），23〜25枚目が評価の改善（ex007））と，`.ai/pptx-render` でレンダリングしたPDF |
 | `slides/build_slides.py` | スライドを生成するスクリプト（テンプレートを展開してOOXMLを直接書き込む．数式はpandocでLaTeXからOMMLへ変換） |
-| `slides/media/` | スライド専用に作成した画像（YOLOと提案手法の検出結果の例） |
+| `slides/media/` | スライド専用に作成した画像（YOLOと提案手法の検出結果の例，ハイブリッド構成で深さ0の切替を誤った領域の切り出し）．ex006の `outputs/` と `datasets/coco/val2017/` を参照する |
 | `paper/make_figures.py` | `outputs/` の結果から論文用の図を作成し `paper/figures/` に保存する |
 | `visualize_result.ipynb` | `outputs/` を走査して表・図を生成する |
 | `.orders/`，`.reports/` | 作業指示と作業報告 |
@@ -58,7 +60,16 @@ flowchart TB
     vlm["common/vlm.py"] --> e1m["ex001 model.py"] & e3m["ex003 model.py"] & e4m["ex004 model.py"]
     det["common/detectors.py"] --> e2m["ex002 model.py"] & e3d & e4m
     wnu["common/wordnet_utils.py"] --> e3t["ex003 train.py"] & e4t["ex004 train.py"] & e4d
+    e5o["outputs/ex005 yolo11x instances.json"] & e3o["outputs/ex003 instances.json"] --> e6d["ex006 data.py"]
+    e5m["ex005 model.py（YOLODetector）"] --> e6m["ex006 model.py"]
+    e4d --> e6d
+    wnu & vlm --> e6t["ex006 train.py"]
     met["common/metrics.py"] --> e1t["ex001 train.py"] & e2t["ex002 train.py"] & e3d
+    coco & met --> e7d["ex007 data.py"]
+    lvis["datasets/lvis/lvis_v1_val.json"] --> e7d
+    e5m --> e7m["ex007 model.py"]
+    det & vlm --> e7m
+    e7d & e7m & wnu --> e7t["ex007 train.py"]
 ```
 
 外部の学習済みモデルは以下を用いる（初回実行時に自動ダウンロードされる）．
@@ -72,6 +83,7 @@ flowchart TB
 | ResNet50-IN1k | torchvision `ResNet50_Weights.IMAGENET1K_V1` |
 | YOLO11n/m/x，YOLOv8x | Ultralytics 8.3.170（重みは `datasets/ex005_coco_val500_yolo_comparison/weights/` に自動ダウンロード） |
 | WordNet | NLTK `wordnet` コーパス |
+| LVIS v1 val | `https://dl.fbaipublicfiles.com/LVIS/lvis_v1_val.json.zip` を `datasets/lvis/` に展開する（ex007） |
 | spaCy | `en_core_web_sm` 3.8.0 |
 
 ## 4. 環境構築
@@ -103,7 +115,9 @@ cd programs/ex002_coco_4img_class_agnostic_det && ../../.venv_pytorch/bin/python
 cd programs/ex003_coco_val500_pipeline && ../../.venv_pytorch/bin/python train.py         # 約15分
 cd programs/ex004_open_vocab_qualitative && ../../.venv_pytorch/bin/python train.py       # 約1分
 cd programs/ex005_coco_val500_yolo_comparison && ../../.venv_pytorch/bin/python train.py  # 約2分（ex002〜ex004の結果を利用する）
-.venv_pytorch/bin/jupyter nbconvert --to notebook --execute --inplace visualize_result.ipynb
+cd programs/ex006_coco_val500_yolo_clip_hybrid && ../../.venv_pytorch/bin/python train.py # 約3分（ex003〜ex005の結果を利用する）
+cd programs/ex007_coco_val_hierarchy_eval && ../../.venv_pytorch/bin/python train.py    # 約15分（5000枚の検出を含む．datasets/lvis/ が必要）
+.venv_pytorch/bin/jupyter nbconvert --to notebook --execute --inplace --ExecutePreprocessor.kernel_name=python3 visualize_result.ipynb  # venv_pytorch カーネルは別プロジェクトのPythonを指しているため python3 を指定する
 .venv_pytorch/bin/python -m pytest tests
 ```
 
@@ -121,6 +135,8 @@ cd programs/ex005_coco_val500_yolo_comparison && ../../.venv_pytorch/bin/python 
 | ex002 | 検出器名 | 閾値設定 | `metrics.json`，`per_gt.csv`，`detections.json` |
 | ex003 | VLM名 | `detr_threshold{t}_crop_{center|pad}` | `metrics.json`，`instances.json`（各インスタンスの推定と階層），`depth_stats.csv` |
 | ex005 | YOLOのモデル名，`yolo11x+CLIP-ViT-B32` | `{coco500, loc4, open_vocab}_conf{閾値}` | `metrics.json`，`instances.json`，`common_vs_{ex003の条件}.json`（共通GTでの比較とMcNemar検定） |
+| ex006 | `hybrid`，`hybrid_switch`，`hybrid_switch_c0.5` | `coco500_conf{閾値}`，`{open_vocab, coco_qualitative}_conf0.25` | `metrics.json`（深さ0の正解率，正命名率，階層の対象数，切替数），`instances.json`，`depth_stats.csv`，`chain_agreement_vs_{ex003の条件}.json`，`annotations.json`，`grid.png` |
+| ex007 | `proposed`，`hybrid`，`hybrid_switch`，`hybrid_switch_c0.5` | `{dev500, test500, lvis_dev, lvis_test}_th{閾値}` | `metrics.json`（誤りの伝播，AUROC，LVISの深さ1の正解率），`instances.json`（全インスタンスの深さ0と下位語の展開），`stopping_curve.csv`（τと深さの上限ごとの指標）．直下に `splits_seed42.json`，`table_conditions.csv`，`table_pairs_agreement.csv`，`table_stopping.csv` |
 | ex004 | `CLIP-ViT-B32` | `{画像セット}_detr_threshold0.5_crop_pad` | `annotations.json`，画像ごとの図，`grid.png` |
 
 `visualize_result.ipynb` が生成する表（`table_*.csv`）と図（`fig_*.png`）は各実験ディレクトリの直下に保存される．
@@ -130,9 +146,25 @@ cd programs/ex005_coco_val500_yolo_comparison && ../../.venv_pytorch/bin/python 
 - `.orders/order_001.md`：再現実装の指示とその解釈
 - `.reports/report_001.md`：実験条件，結果，論文値との比較，考察，未解決の論点
 - `.orders/order_002.md`，`.reports/report_002.md`：論文の作成の指示と作業報告
-- `paper/main.pdf`：実験結果をまとめた和文論文（order_003による追記箇所は赤字）
+- `paper/main.pdf`：実験結果をまとめた和文論文（order_008による追記箇所は赤字．order_006以前の追記箇所は黒字に戻した）
 - `.orders/order_003.md`，`.reports/report_003.md`：YOLOとの比較実験と論文への追記の指示と作業報告
 - `.orders/order_004.md`，`.reports/report_004.md`：発表スライドの作成の指示と作業報告
+- `paper/qa_summary.md`，`paper/qa_summary.pdf`：論文の手法と実験結果に関する質疑応答（16件）の整理
+- `.orders/order_005.md`，`.reports/report_005.md`：質疑応答の整理の指示と作業報告
+- `.orders/order_006.md`，`.reports/report_006.md`：YOLOとCLIPのハイブリッド構成の実装と論文への追記（4.9節，追記箇所は赤字）の指示と作業報告
+- `.orders/order_007.md`，`.reports/report_007.md`：ハイブリッド構成（ex006）の発表スライドへの追加の指示と作業報告
+- `.orders/order_008.md`，`.reports/report_008.md`：評価の改善（ex007，論文4.10節・4.11節，スライド23〜25枚目）とex006の不具合修正の指示と作業報告
+
+### 質疑応答の整理のビルド
+
+```bash
+# $`...`$ の数式表記をpandocの $...$ に置換してからLuaLaTeX（ltjsarticle）でPDF化する
+cd paper && ../.venv_pytorch/bin/python -c "
+import re, pypandoc
+src = re.sub(r'\\$\`(.+?)\`\\$', r'\$\1\$', open('qa_summary.md', encoding='utf-8').read())
+pypandoc.convert_text(src, 'pdf', format='markdown', outputfile='qa_summary.pdf', extra_args=['--pdf-engine=lualatex', '-V', 'documentclass=ltjsarticle', '-V', 'geometry:margin=18mm', '-V', 'fontsize=10pt'])
+"
+```
 
 ### 論文のビルド
 

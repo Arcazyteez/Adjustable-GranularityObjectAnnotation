@@ -48,6 +48,7 @@ REFS = {
     6: "[6] G. A. Miller, “WordNet: A Lexical Database for English,” Communications of the ACM, vol.38, no.11, pp.39-41, 1995.",
     7: "[7] T.-Y. Lin, et al., “Microsoft COCO: Common Objects in Context,” Proc. ECCV, pp.740-755, 2014.",
     8: "[8] G. Jocher, J. Qiu, and A. Chaurasia, “Ultralytics YOLO,” https://github.com/ultralytics/ultralytics, 2023.",
+    9: "[9] A. Gupta, P. Dollár, and R. Girshick, “LVIS: A Dataset for Large Vocabulary Instance Segmentation,” Proc. IEEE/CVF CVPR, pp.5356-5364, 2019.",
 }
 
 
@@ -91,7 +92,12 @@ def latex_to_omml(latex, display=True, size=2800):
     omml = re.sub(r"<m:r>(<m:rPr>.*?</m:rPr>)?<m:t>(.*?)</m:t></m:r>", to_math_alphanumeric, omml)
     a_rpr = (f'<a:rPr lang="en-US" altLang="ja-JP" sz="{size}" i="1">'
              '<a:latin typeface="Cambria Math" panose="02040503050406030204" pitchFamily="18" charset="0"/></a:rPr>')
-    omml = re.sub(r"(<m:r>(?:<m:rPr>.*?</m:rPr>)?)", lambda m: m.group(1) + a_rpr, omml)
+    # 日本語を含むランは東アジア文字のフォントを指定する（Cambria Mathには和文の字形がないため）
+    a_rpr_ja = (f'<a:rPr lang="ja-JP" altLang="en-US" sz="{size}" i="0">'
+                '<a:latin typeface="Cambria Math" panose="02040503050406030204" pitchFamily="18" charset="0"/>'
+                f'{FONT.split("/>")[1]}/></a:rPr>')
+    omml = re.sub(r"(<m:r>(?:<m:rPr>.*?</m:rPr>)?)(<m:t>[^<]*</m:t>)",
+                  lambda m: m.group(1) + (a_rpr_ja if re.search(r"[\u3000-\u9fff]", m.group(2)) else a_rpr) + m.group(2), omml)
     return re.sub(r">\s+<", "><", omml)
 
 
@@ -363,7 +369,7 @@ class Slide:
         Args:
             x, y (float): 位置（インチ）．
             col_widths (list[float]): 列幅（インチ）．
-            rows (list[list[str]]): セルの文字列（1行目が見出し）．
+            rows (list[list[str]]): セルの文字列（1行目が見出し）．$ で囲んだセルはLaTeXの数式として扱う．
             size (int): 文字サイズ（1/100ポイント）．
             row_h (float): 行の高さ（インチ）．
             highlight (iterable[tuple[int, int]]): 赤字・太字で強調するセルの (行, 列)．
@@ -378,18 +384,24 @@ class Slide:
             tcs = []
             for j, cell in enumerate(row):
                 emph = (i, j) in highlight
-                r = run(cell, size, bold=emph or i == 0, color=RED if emph else None) if cell else ""
+                if cell.startswith("$"):
+                    r = math_run(cell.strip("$"), size)
+                    if i == 0:  # 見出し行の数式は他の見出しと同じ白色にする
+                        r = r.replace("<a:latin", '<a:solidFill><a:schemeClr val="bg1"/></a:solidFill><a:latin')
+                else:
+                    r = run(cell, size, bold=emph or i == 0, color=RED if emph else None) if cell else ""
                 tcs.append(f'<a:tc><a:txBody><a:bodyPr/><a:lstStyle/><a:p><a:pPr algn="ctr"/>{r}'
                            f'<a:endParaRPr kumimoji="1" lang="ja-JP" altLang="en-US" sz="{size}" dirty="0"/></a:p></a:txBody>'
                            '<a:tcPr anchor="ctr"/></a:tc>')
             trs.append(f'<a:tr h="{emu(row_h)}">{"".join(tcs)}</a:tr>')
-        self.shapes.append(
+        frame = (
             f'<p:graphicFrame><p:nvGraphicFramePr><p:cNvPr id="{sid}" name="表 {sid}"/>'
             '<p:cNvGraphicFramePr><a:graphicFrameLocks noGrp="1"/></p:cNvGraphicFramePr><p:nvPr/></p:nvGraphicFramePr>'
             f'<p:xfrm><a:off x="{emu(x)}" y="{emu(y)}"/><a:ext cx="{emu(sum(col_widths))}" cy="{emu(row_h * len(rows))}"/></p:xfrm>'
             '<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/table"><a:tbl>'
             '<a:tblPr firstRow="1" bandRow="1"><a:tableStyleId>{5C22544A-7EE6-4342-B048-85BDC9FD1C3A}</a:tableStyleId></a:tblPr>'
             f'<a:tblGrid>{grid}</a:tblGrid>{"".join(trs)}</a:tbl></a:graphicData></a:graphic></p:graphicFrame>')
+        self.shapes.append(self._wrap_math(frame) if "<a14:m>" in frame else frame)
 
     def refs(self, *numbers):
         """
@@ -462,7 +474,8 @@ def make_media():
     os.makedirs(MEDIA_DIR, exist_ok=True)
     media = {name: os.path.join(PAPER_FIG, f"{name}.png") for name in
              ["fig_vlm_comparison", "fig_pipeline_accuracy", "fig_depth_confidence", "fig_crop_preprocess",
-              "fig_open_vocab", "fig_coco_qualitative", "fig_yolo_comparison", "fig_yolo_open_vocab"]}
+              "fig_open_vocab", "fig_coco_qualitative", "fig_yolo_comparison", "fig_yolo_open_vocab",
+              "fig_hybrid_qualitative", "fig_stopping"]}
     data_dir = os.path.join(ROOT, "datasets", "ex004_open_vocab_qualitative")
     yolo = json.load(open(os.path.join(ROOT, "outputs", "ex005_coco_val500_yolo_comparison", "yolo11x",
                                        "open_vocab_conf0.25", "42", "annotations.json")))
@@ -475,7 +488,32 @@ def make_media():
         regions = prop[name]["regions"]
         labels = [" → ".join(f"{s['word']} ({s['conf']:.2f})" for s in r["chain"]) for r in regions]
         media[f"prop_{name}"] = draw_boxes(image, [r["box"] for r in regions], labels, f"prop_{name}.png", max_boxes=1)
+    media["hybrid_book"] = make_book_crop()
     return media
+
+
+def make_book_crop():
+    """
+    ハイブリッド構成で深さ0の切替が誤った領域（COCO 262938の本，YOLOの検出スコア0.30）の周辺を切り出して保存する．
+
+    Returns:
+        str: 保存したパス．
+    """
+    ann = json.load(open(os.path.join(ROOT, "outputs", "ex006_coco_val500_yolo_clip_hybrid", "hybrid_switch",
+                                      "coco_qualitative_conf0.25", "42", "annotations.json")))
+    box = next(r["box"] for r in ann["coco_dog_262938"]["regions"] if r["chain"][0]["word"] == "parrot")
+    image = Image.open(os.path.join(ROOT, "datasets", "coco", "val2017", "000000262938.jpg")).convert("RGB")
+    left, top = max(0, box[0] - 120), 0
+    crop = image.crop((int(left), top, image.size[0], int(min(image.size[1], box[3] + 120))))
+    shifted = [box[0] - left, box[1] - top, box[2] - left, box[3] - top]
+    fig, ax = plt.subplots(figsize=(4, 4 * crop.size[1] / crop.size[0]))
+    ax.imshow(crop)
+    ax.axis("off")
+    ax.add_patch(plt.Rectangle(shifted[:2], shifted[2] - shifted[0], shifted[3] - shifted[1], fill=False, edgecolor="red", lw=4))
+    path = os.path.join(MEDIA_DIR, "hybrid_book.png")
+    fig.savefig(path, dpi=150, bbox_inches="tight", pad_inches=0)
+    plt.close(fig)
+    return path
 
 
 def draw_boxes(image, boxes, labels, file_name, max_boxes=3):
@@ -826,22 +864,170 @@ def build_slides(media):
     s.refs(8)
     slides.append(s)
 
-    # 18. まとめ
+    # 18. ハイブリッド構成の考え方
+    s = Slide("ハイブリッド構成：深さ0の分類をYOLOに任せる")
+    y = 1.15
+    steps = [("画像", 1.3, "FFFFFF"), ("YOLO11x[8]\n検出＋80クラス", 2.9, "DDEBF7"), ("深さ0の単語\n（切替規則）", 2.6, "FFFFFF"),
+             ("CLIP[5]＋WordNet[6]\n深さ1以降を細分化", 3.6, "FFF2CC")]
+    x = 0.3
+    for i, (label, w, fill) in enumerate(steps):
+        s.box(x, y, w, 1.4, [para(run(t, 2000, j == 0 and i > 0), align="ctr") for j, t in enumerate(label.split("\n"))],
+              fill=fill, line="accent1", anchor="ctr")
+        if i < len(steps) - 1:
+            s.arrow(x + w + 0.05, y + 0.7, x + w + 0.45, y + 0.7)
+        x += w + 0.5
+    s.text(0.3, 2.85, 12.7, 0.6, [para(run("例：YOLO: dog（0.92）→ CLIP: basenji（0.72）", 2400), align="ctr")])
+    s.text(0.3, 3.6, 12.7, 2.7, [
+        bullet("80クラス内の分類はYOLOが高精度（0.981）"),
+        bullet("深さ0の誤りが減る → 誤った分岐をたどりにくい"),
+        bullet("細分化はこれまでと同じく再学習なし"),
+    ])
+    s.refs(5, 6, 8)
+    slides.append(s)
+
+    # 19. COCO以外の語への切替規則
+    s = Slide("COCO以外の語への切替規則と閾値γ")
+    s.text(0.3, 0.95, 12.7, 0.6, [para(run("CLIPがCOCO外の語を高い確信度で選んだときのみ切り替える", 2800))])
+    s.text(0.6, 1.6, 11.0, 1.5, [math_para(
+        r"\hat{v}_k^{(0)} = \begin{cases} u_k & (u_k \in \mathbb{V}_E,\; f(\mathbf{X}_k; \mathbb{V}^{(0)} \cup \mathbb{V}_E)_{u_k} \geq \gamma) \\ y_k & (\mathrm{otherwise}) \end{cases}",
+        2400)], anchor="ctr")
+    s.text(11.8, 1.6, 1.2, 1.5, [para(run("(4)", 2800), align="r")], anchor="ctr")
+    s.text(0.3, 3.2, 12.7, 1.6, [
+        para(math_run("y_k", 2400), run("：YOLOのクラス，", 2400), math_run(r"\mathbb{V}_E", 2400), run("：COCO外の22語，", 2400),
+             math_run(r"\gamma", 2400), run("：切替に必要な確信度の下限", 2400)),
+        para(math_run("u_k", 2400), run("：80クラスと22語の計102語を候補として(1)で推定した単語", 2400), space_before=600),
+    ])
+    s.table(1.4, 4.6, [2.2, 2.9, 2.9, 2.5], [
+        ["構成", "検証用の500枚", "テスト用の500枚", "COCO外の画像"],
+        ["γ=0", "47件を誤って切替", "50件を誤って切替", "切り替わる"],
+        ["γ=0.5", "2件", "8件（6件は下位語）", "切り替わる"],
+    ], size=2000, row_h=0.5, highlight=[(2, 1), (2, 2), (2, 3)])
+    s.text(1.4, 6.15, 10.5, 0.5, [para(run("下位語：bird → flamingo など，WordNetでGTカテゴリの下位語となる切替", 2000))])
+    slides.append(s)
+
+    # 20. ハイブリッド構成の定量結果（評価数 n が近い組で比較）
+    s = Slide("ハイブリッド構成の結果：細分化できる物体が約1.6倍")
+    s.table(0.9, 1.0, [4.4, 1.3, 1.3, 1.5, 1.5, 1.5], [
+        ["手法", "閾値", "$n$", "Top-1", "$r$", "$N_h$"],
+        ["提案手法（DETR）", "θ=0.5", "2343", "0.560", "0.410", "1313"],
+        ["ハイブリッド", "0.25", "2210", "0.981", "0.676", "2167"],
+        ["提案手法（DETR）", "θ=0.97", "1519", "0.604", "0.286", "917"],
+        ["ハイブリッド", "0.7", "1474", "0.993", "0.456", "1463"],
+    ], size=2000, row_h=0.5, highlight=[(2, 5), (4, 5)])
+    s.text(0.3, 3.7, 12.7, 2.7, [
+        para(run("・評価数", 2800), math_run("n", 2800), run("が近い組で比較：", 2800), run("1.65倍，1.60倍", 2800, True, RED)),
+        note("検出スコアの定義が異なるため，閾値の値では揃えない"),
+        para(run("・", 2800), math_run("N_h", 2800), run("：深さ0が正解の物体数，", 2800), math_run("r", 2800),
+             run("：GT 3206件に対する割合", 2800), space_before=600),
+    ])
+    s.refs(8)
+    slides.append(s)
+
+    # 21. ハイブリッド構成の定性結果
+    s = Slide("ハイブリッド構成の定性結果：COCO外の語も細分化")
+    s.image(media["fig_hybrid_qualitative"], 0.3, 0.95, h=4.45)
+    s.text(0.3, 5.45, 12.7, 1.1, [
+        para(run("・bird / dog → ", 2400), run("CLIP: penguin（0.99）/ camel（0.99）", 2400, True, RED),
+             run(" に切替後，細分化", 2400)),
+        note("YOLOが検出しない灯台や，giraffe → okapi の分岐は解消されない", indent=False),
+    ])
+    slides.append(s)
+
+    # 22. 限界：深さ0の誤りの展開
+    s = Slide("限界：深さ0の誤りはそのまま下位語へ展開される")
+    s.image(media["hybrid_book"], 0.3, 1.0, h=3.2)
+    s.text(0.3, 4.25, 3.4, 0.45, [para(run("YOLO: book（0.30）", 2000), align="ctr")])
+    chains = [("γ=0", [("parrot", "0.18", True), ("parakeet", "0.25", False), ("budgerigar", "0.78", False)]),
+              ("γ=0.5", [("book", "0.30", False), ("journal", "0.34", False), ("diary", "0.78", False)])]
+    for i, (label, chain) in enumerate(chains):
+        cy = 1.1 + i * 1.6
+        s.text(3.9, cy, 1.3, 1.0, [para(run(label, 2400, True), align="ctr")], anchor="ctr")
+        for j, (word, conf, wrong) in enumerate(chain):
+            bx = 5.3 + j * 2.6
+            s.box(bx, cy, 2.2, 1.0, [para(run(word, 2000, True, RED if wrong else None), align="ctr"),
+                                      para(run(f"（{conf}）", 2000), align="ctr")],
+                  fill="FCE4E4" if i == 0 else "DDEBF7", line="accent1", anchor="ctr")
+            if j < 2:
+                s.arrow(bx + 2.25, cy + 0.5, bx + 2.55, cy + 0.5)
+    s.text(3.9, 4.25, 9.2, 2.2, [
+        bullet("誤った語の下位語の中から選ぶ", space_before=0),
+        note("→ 深い段階の確信度は高く見える（0.78）"),
+        bullet("COCOの評価は深さ0が正解の物体のみ集計"),
+        note("誤りの展開は表の数値に含まれない"),
+    ])
+    slides.append(s)
+
+    # 23. 別の500枚による検証と誤りの伝播（テスト用の500枚）
+    s = Slide("誤った枝は深い段階の確信度では見分けられない")
+    s.table(0.6, 1.0, [3.8, 2.4, 2.9, 2.9], [
+        ["テスト用の500枚", "閾値", "提案手法", "ハイブリッド"],
+        ["細分化できる物体数", "θ=0.5 / 0.25", "1509", "2492（1.65倍）"],
+        ["誤った枝に展開", "θ=0.5 / 0.25", "44.8%", "3.1%"],
+        ["AUROC：最深段の確信度", "θ=0.5 / 0.25", "0.611", "0.418"],
+        ["AUROC：深さ0の確信度", "θ=0.5 / 0.25", "0.725", "0.715"],
+    ], size=2000, row_h=0.5, highlight=[(1, 3), (4, 2), (4, 3)])
+    s.text(0.3, 3.75, 12.7, 2.7, [
+        bullet("閾値やγを決めた500枚とは別の500枚で再評価", space_before=0),
+        bullet("誤った枝の最深段の確信度は正しい枝と同程度"),
+        note("→ 誤りの手がかりは深さ0の確信度のみ", color=RED),
+    ])
+    slides.append(s)
+
+    # 24. LVISによる深さ1以降の評価
+    s = Slide("LVISによる評価：深さ1の正解は半数未満")
+    s.text(0.3, 0.95, 12.7, 1.6, [
+        bullet("LVIS[9]：COCOの画像に1203カテゴリ（WordNetのSynset付き）", space_before=0),
+        note("COCOより細かい正解の例：bird → pigeon，bottle → wine bottle"),
+    ])
+    s.table(0.9, 2.65, [4.6, 3.3, 3.3], [
+        ["LVISのテスト用分割", "提案手法（θ=0.5）", "ハイブリッド（0.25）"],
+        ["評価インスタンス数", "489", "481"],
+        ["深さ1が正しい割合", "0.440", "0.407"],
+        ["LVISの語まで到達", "0.272", "0.372"],
+    ], size=2000, row_h=0.5, highlight=[(2, 1), (2, 2)])
+    s.text(0.3, 4.9, 12.7, 1.4, [
+        bullet("深さ0が正しい物体のみで集計しても半数未満", space_before=0),
+        note("深さ1での確信度の低下（0.642→0.442）は実際の誤りを伴う"),
+    ])
+    s.refs(9)
+    slides.append(s)
+
+    # 25. 累積確信度による細分化の停止
+    s = Slide("累積確信度で細分化を止める")
+    s.text(0.3, 0.95, 6.9, 1.2, [math_para(r"c_k^{(d)} = \prod_{j=0}^{d} f(\mathbf{X}_k; \mathbb{V}_k^{(j)})_{\hat{v}_k^{(j)}} \geq \tau", 2400)],
+           anchor="ctr")
+    s.text(6.3, 0.95, 0.9, 1.2, [para(run("(5)", 2400), align="r")], anchor="ctr")
+    s.text(0.3, 2.2, 6.9, 4.3, [
+        para(run("・満たす最も深い段階まで出力", 2400)),
+        para(run("　", 2400), math_run(r"c_k^{(0)} < \tau", 2400), run(" なら棄却", 2400)),
+        para(run("・τは検証用の分割で決定", 2400), space_before=600),
+        para(run("・テスト用：", 2400), math_run("hP", 2400), run(" ", 2400), run("0.594 → 0.801", 2400, True, RED)),
+        note("ハイブリッド構成，τ=0.3"),
+        para(run("・深さ1で止める規則と", 2400), math_run("hF", 2400), run("は同程度", 2400), space_before=600),
+    ])
+    s.image(media["fig_stopping"], 7.4, 1.0, w=5.6)
+    slides.append(s)
+
+    # 26. まとめ
     s = Slide("まとめと今後の課題")
     s.box(0.3, 1.0, 6.25, 5.3, [
         para(run("まとめ", 2800, True), align="ctr"),
-        para(run("1. 検出とカテゴリ付与の分離", 2400), space_before=900),
-        para(run("2. 再学習なしの粒度可変化", 2400), space_before=900),
-        para(run("3. Top-1 0.604，Top-5 0.894", 2400), space_before=900),
-        para(run("4. COCO外の語も付与できる", 2400), space_before=900),
-        para(run("5. 80クラス内はYOLOが優位", 2400), space_before=900),
+        para(run("1. 検出とカテゴリ付与の分離", 2400), space_before=700),
+        para(run("2. 再学習なしの粒度可変化", 2400), space_before=700),
+        para(run("3. Top-1 0.604，Top-5 0.894", 2400), space_before=700),
+        para(run("4. COCO外の語も付与できる", 2400), space_before=700),
+        para(run("5. 80クラス内はYOLOが優位", 2400), space_before=700),
+        para(run("6. YOLOとの組み合わせで", 2400), space_before=700),
+        para(run("　 細分化できる物体が約1.6倍", 2400)),
+        para(run("7. 深さ1の正解は半数未満", 2400), space_before=700),
     ])
     s.box(6.8, 1.0, 6.25, 5.3, [
         para(run("今後の課題", 2800, True), align="ctr"),
-        para(run("1. WordNet階層の選別", 2400), space_before=900),
-        para(run("2. YOLOとVLMの組み合わせ", 2400), space_before=900),
-        para(run("3. 語彙外の領域の棄却", 2400), space_before=900),
-        para(run("4. 検出の学習分布依存の緩和", 2400), space_before=900),
+        para(run("1. WordNet階層の選別", 2400), space_before=700),
+        para(run("2. 深い段階の確信度の改善", 2400), space_before=700),
+        para(run("3. 人物クラスの細分化の評価", 2400), space_before=700),
+        para(run("4. 語彙外の領域の棄却", 2400), space_before=700),
+        para(run("5. 検出の学習分布依存の緩和", 2400), space_before=700),
     ])
     slides.append(s)
     return slides
