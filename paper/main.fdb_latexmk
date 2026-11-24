@@ -1,9 +1,9 @@
 # Fdb version 3
-["dvipdf"] 1794283228 "main.dvi" "main.pdf" "main" 1794283228
-  "main.dvi" 1794283228 141144 1ed8315404d4ac897e65cc58777f473d "latex"
+["dvipdf"] 1794357402 "main.dvi" "main.pdf" "main" 1794357402
+  "main.dvi" 1794357402 162544 dfc2fcee1c3bd32dd4ae9bfc7450cad7 "latex"
   (generated)
   "main.pdf"
-["latex"] 1794283227 "main.tex" "main.dvi" "main" 1794283228
+["latex"] 1794357401 "main.tex" "main.dvi" "main" 1794357402
   "/etc/texmf/web2c/texmf.cnf" 1791113565 475 c0e671620eb5563b2130f56340a5fde8 ""
   "/usr/share/texlive/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/jknappen/ec/ecrm1000.tfm" 1136768653 3584 adb004a0c8e7c46ee66cad73671f37b4 ""
@@ -193,21 +193,22 @@
   "figures/fig_hybrid_qualitative.pdf" 1794283057 174608 4d97b177ea4d2049f3fd59a3a0120915 ""
   "figures/fig_open_vocab.pdf" 1794283055 274047 d8eddd88ac9c06bcbe9e040936ce07a8 ""
   "figures/fig_pipeline_accuracy.pdf" 1794283054 21854 53aa85a37761e9988905399a6bac21f0 ""
+  "figures/fig_siglip_auroc.pdf" 1794357290 17894 19edebc89d1f317398cda326d1a12177 ""
   "figures/fig_stopping.pdf" 1794283077 18478 84da209d1a7e88298544df373621d6e3 ""
   "figures/fig_vlm_comparison.pdf" 1794283053 14209 3106ecdd2c2b274ced0b3def63f8f2b5 ""
   "figures/fig_yolo_comparison.pdf" 1794283057 18725 f8fbfc83f4baf8191f15cb85ddd169f1 ""
   "figures/fig_yolo_open_vocab.pdf" 1794283056 69646 bd7f1a7d03a17bf2060b8e4819adc843 ""
   "ieicejsp.cls" 1793161190 25656 95a3c5cbdab6df2a189c8551f1d41a6a ""
-  "main.aux" 1794283228 11303 abbd858bbcb879486a99a921ccebf698 "latex"
+  "main.aux" 1794357402 13154 daeae37b494c0f8a215f78fe1a65eb4f "latex"
   "main.tex" 1793163455 1245 56ab8eee25540a0c65d53900240d225b ""
-  "sections/00_abstract.tex" 1794283197 3768 92bb935e1178b26b92d47a292efa3d4d ""
-  "sections/01_introduction.tex" 1794283197 4554 84cc907470a7fb662699f3660b36c10e ""
+  "sections/00_abstract.tex" 1794357369 4407 6d376f23b5c26503d3001538f6b6b2f7 ""
+  "sections/01_introduction.tex" 1794357369 4738 bab69e1741811265f5ac1f7d6677da5e ""
   "sections/02_related_work.tex" 1794283087 3933 f8d89693e2ec77f9ecfd176657077725 ""
   "sections/03_method.tex" 1794283087 10591 113c6ae9dcb2b84532ca6e93d64f0cdb ""
-  "sections/04_experiments.tex" 1794283227 46292 192ef49ed52e7ea0c8ac4d30570c2327 ""
-  "sections/05_discussion.tex" 1794283202 8635 d85a05cd1d3e604f48cd0c2c062deca9 ""
-  "sections/06_conclusion.tex" 1794283197 3965 0c541aac738b0f030b6a6eb54b8cbacd ""
-  "sections/07_references.tex" 1794283094 4398 4dd897d925182dd74f9f8b57566f226a ""
+  "sections/04_experiments.tex" 1794357401 58571 d1564b0b80f25b00063a2583bea4cab1 ""
+  "sections/05_discussion.tex" 1794357369 9101 0b05177dc2ca4d29beb8ab979d9a0502 ""
+  "sections/06_conclusion.tex" 1794357369 4629 048f58e7fa34b23d756445e57c2a75a7 ""
+  "sections/07_references.tex" 1794357369 4835 8b020feb6707f553bbcc3178590136d2 ""
   (generated)
   "main.aux"
   "main.dvi"

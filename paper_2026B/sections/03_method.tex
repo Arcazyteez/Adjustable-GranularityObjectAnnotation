@@ -1,0 +1,170 @@
+\section{提案手法}
+\subsection{基本の手法：切り抜き画像による粒度可変アノテーション}
+本節では，学習時のクラスの範囲を対象とする基本の手法を述べ，4.2節の予備実験に用いる．
+学習時に無い物体を対象とする提案手法は3.3節で述べる．
+画像$ {\mathbf X} \in {\mathbb R}^{H \times W \times 3} $に対し，物体認識モデル$ D $はボックスの集合$ {\mathbb B} = \{ {\mathbf b}_1, {\mathbf b}_2, \ldots \} = D({\mathbf X}) $を出力する．
+ここで，$ H $，$ W $は画像の高さと幅，$ {\mathbf b}_i \in {\mathbb R}^4 $は$ i $番目の物体のボックスの左上と右下の座標である．
+$ i $番目の物体の切り抜き画像を
+
+\begin{equation}
+    {\mathbf X}_i = \mathrm{Pad} \bigl( \mathrm{Crop}({\mathbf X}, {\mathbf b}_i) \bigr)
+    \label{eq_crop}
+\end{equation}
+
+\noindent
+とする．
+ここで，$ \mathrm{Crop}({\mathbf X}, {\mathbf b}) $は画像$ {\mathbf X} $から$ {\mathbf b} $の範囲を切り抜く関数，$ \mathrm{Pad}(\cdot) $は長辺に合わせて黒で埋めて正方形にする関数であり，文章・画像埋め込みモデルの前処理で物体の両端が失われないようにするために用いる．
+
+文章・画像埋め込みモデル$ F $は，画像と文章をそれぞれ$ D' $次元のL2正規化された特徴ベクトルに埋め込む．
+切り抜き画像の特徴ベクトルを$ {\mathbf v}_{{\mathbf X}_i} = F({\mathbf X}_i) $，単語$ w $の特徴ベクトルを，単語を「a photo of a $ \{w\} $」という文章に埋め込んだ$ {\mathbf v}_w = F(t(w)) $とし，両者の類似度をコサイン類似度
+
+\begin{equation}
+    \mathrm{sim}({\mathbf v}_{{\mathbf X}_i}, {\mathbf v}_w) = {\mathbf v}_{{\mathbf X}_i} {\mathbf v}_w^{\top}
+    \label{eq_similarity}
+\end{equation}
+
+\noindent
+とする．
+ここで，$ t(w) $は単語$ w $を文章に埋め込む関数である．
+
+語彙レベルが最も高い単語の集合を$ {\mathbb W} = \{ w_1, w_2, \ldots \} $とする．
+提案手法は，切り抜き画像と最も類似した単語
+
+\begin{equation}
+    j^\ast = \argmax_{j} \mathrm{sim}({\mathbf v}_{{\mathbf X}_i}, {\mathbf v}_{w_j})
+    \label{eq_argmax}
+\end{equation}
+
+\noindent
+を選び，類似度が類似と判断する下限値$ \theta $以上であれば，ボックスと単語の組$ ({\mathbf b}_i, w_{j^\ast}) $を出力する．
+その後，単語の集合$ {\mathbb W} $を$ w_{j^\ast} $の下位語からなる集合に置き換え，(\ref{eq_argmax})による選択を繰り返す．
+類似度が$ \theta $未満となるか，下位語が存在しなくなった時点で，$ i $番目のボックスのアノテーションを終了する．
+これにより，1つのボックスに対し，粗い語から細かい語までの単語の列が出力される．
+全体の手順をAlgorithm \ref{alg_granular}に示す．
+
+\begin{algorithm}[t]
+    \caption{粒度可変アノテーション}
+    \label{alg_granular}
+    \begin{algorithmic}[1]
+        \Require 物体認識モデル$ D $，文章・画像埋め込みモデル$ F $，語彙レベルが最も高い単語の集合$ {\mathbb W} $，画像$ {\mathbf X} $，類似と判断する下限値$ \theta $
+        \State $ {\mathbb B} = \{ {\mathbf b}_1, {\mathbf b}_2, \ldots \} \gets D({\mathbf X}) $
+        \For{$ i = 1, 2, \ldots $}
+            \State $ {\mathbf X}_i \gets \mathrm{Pad}(\mathrm{Crop}({\mathbf X}, {\mathbf b}_i)) $，$ {\mathbf v}_{{\mathbf X}_i} \gets F({\mathbf X}_i) $
+            \State $ {\mathbb W}_i \gets {\mathbb W} $
+            \Loop
+                \State $ j^\ast \gets \argmax_j \mathrm{sim}({\mathbf v}_{{\mathbf X}_i}, F(t(w_j))) $，$ w_j \in {\mathbb W}_i $
+                \If{$ \mathrm{sim}({\mathbf v}_{{\mathbf X}_i}, F(t(w_{j^\ast}))) < \theta $}
+                    \State \textbf{break}
+                \EndIf
+                \State 出力 $ ({\mathbf b}_i, w_{j^\ast}) $
+                \State $ {\mathbb W}_i \gets w_{j^\ast} $の下位語からなる集合
+                \If{$ {\mathbb W}_i = \emptyset $}
+                    \State \textbf{break}
+                \EndIf
+            \EndLoop
+        \EndFor
+    \end{algorithmic}
+\end{algorithm}
+
+\subsection{基本の手法の実装}
+物体認識モデル$ D $には，COCOの80クラスで学習済みのYOLO11x\cite{ref_YOLO11}と，DETR（ResNet-50）\cite{ref_DETR}を用いる．
+YOLO11xは検出スコアが0.25以上，DETRは「物体なし」以外のクラスの最大確率が0.5以上のボックスを用いる．
+文章・画像埋め込みモデル$ F $には，OpenCLIP\cite{ref_OpenCLIP}によるCLIP ViT-B/32（OpenAIの学習済みの重み）と，SigLIP ViT-B/16（WebLIで学習済みの重み）を用いる．
+下位語の集合は，WordNetにおける選んだ単語のSynsetの直接の下位語とし，各Synsetの先頭のレンマを単語とする．
+
+\subsection{提案手法：学習時に無い物体への粒度可変アノテーション}
+Algorithm \ref{alg_granular}をそのまま用いると，COCOで学習した物体認識モデル$ D $はCOCO外の物体を背景として扱うことがあり，検出されなかった物体には単語を付けられない．
+また，4.2節で示すように，WordNetの上位語から下位語を1段ずつたどると，最初の段階や役割を表す下位語で誤りやすい．
+そこで，モデルの再学習を行わずに，学習時に無い物体を検出し，学習時に無い語彙で命名するため，Algorithm \ref{alg_granular}を以下のように拡張する．
+
+{\bf A1：物体認識モデルのクラスの利用．}
+$ D $が出力したボックス$ {\mathbf b}_i $には，$ D $のクラス$ y_i $を出力する．
+
+{\bf A2：領域の追加と棄却．}
+テキストに依存しない物体らしさのスコア$ o({\mathbf b}) $を出力するOWLv2\cite{ref_OWLv2}の領域$ {\mathbb B}_{\mathrm{O}} $のうち，$ D $のボックス$ {\mathbb B} $のいずれともIoUが0.5未満の領域を，スコアが下限値$ o_{\min} $以上のものに限りスコアの上位$ K $件まで加える．
+
+\begin{equation}
+    \begin{aligned}
+    {\mathbb B}' = {\mathbb B} \cup \mathrm{Top}_K \Bigl\{ {\mathbf b} \in {\mathbb B}_{\mathrm{O}} \Bigm| & \max_{{\mathbf b}' \in {\mathbb B}} \mathrm{IoU}({\mathbf b}, {\mathbf b}') < 0.5, \\
+    & o({\mathbf b}) \geq o_{\min} \Bigr\}
+    \end{aligned}
+    \label{eq_add}
+\end{equation}
+
+{\bf N1：領域の特徴による語彙全体の確率．}
+加えた領域$ {\mathbf b} $の単語は，切り抜き画像ではなく，OWLv2が領域ごとに出力する特徴から求める．
+語彙$ {\mathbb V} $は，物理的な実体（physical entity）の下位のSynsetのうち，COCO train2017のキャプションに5回以上出現するレンマを持つもの（7806語）とする．
+OWLv2が領域$ {\mathbf b} $に対して出力するL2正規化された埋め込みを$ {\mathbf e}_{\mathbf b} $，ロジットの倍率を$ s_{\mathbf b} $，単語$ w $の文章の特徴を$ {\mathbf u}_w $とし，語彙全体で正規化した確率を
+
+\begin{equation}
+    p(w \mid {\mathbf b}) = \frac{\exp \bigl( \beta s_{\mathbf b} {\mathbf e}_{\mathbf b} {\mathbf u}_w^{\top} \bigr)}{\sum_{w' \in {\mathbb V}} \exp \bigl( \beta s_{\mathbf b} {\mathbf e}_{\mathbf b} {\mathbf u}_{w'}^{\top} \bigr)}
+    \label{eq_prob}
+\end{equation}
+
+\noindent
+とする．
+ここで，$ \beta $は確率の鋭さを調整する温度の倍率である．
+OWLv2の倍率$ s_{\mathbf b} $のままでは7806語の確率がほぼ一様になるため，$ \beta $を検証用の画像で選ぶ．
+
+{\bf N2：上位語への確率の集約．}
+各単語の確率をWordNetの上位語へ足し上げ，Synset $ n $の確率を
+
+\begin{equation}
+    q(n \mid {\mathbf b}) = \sum_{w \in {\mathbb V}} p(w \mid {\mathbf b}) \, {\mathbf 1}\bigl[ n \in \mathrm{Anc}(w) \bigr]
+    \label{eq_aggregate}
+\end{equation}
+
+\noindent
+とする．
+ここで，$ \mathrm{Anc}(w) $は$ w $自身とその全ての上位語の集合，$ {\mathbf 1}[\cdot] $は条件を満たす場合に1，それ以外で0となる関数である．
+$ q $は上位語ほど大きく，根のSynsetで1となる．
+
+{\bf N3：上位語からの貪欲な選択．}
+根のSynset $ n_0 $（physical entity）から出発し，集約した確率が最大の直接の下位語
+
+\begin{equation}
+    n_{k+1} = \argmax_{c \in \mathrm{Hypo}_1(n_k)} q(c \mid {\mathbf b})
+    \label{eq_greedy}
+\end{equation}
+
+\noindent
+へ進むことを，$ q(n_{k+1} \mid {\mathbf b}) < \tau $となるか，$ q(n_{k+1} \mid {\mathbf b}) $が$ n_k $自身の単語の確率$ p(n_k \mid {\mathbf b}) $以下となるまで繰り返し，最後のSynsetを出力する．
+ここで，$ \mathrm{Hypo}_1(n) $は$ n $の直接の下位語のうち$ {\mathbb V} $の単語を下位に持つものの集合，$ \tau $は閾値である．
+これにより，確信度が高い場合は細かい語まで進み，確信度が低い場合は正しい可能性の高い粗い語で止まる．
+比較のため，確率が最大の単語をそのまま出力する規則（flat），$ q \geq \tau $となる最も深いSynsetを出力する規則（deepest），確率が最大の単語から$ q \geq \tau $となるまで上位語へさかのぼる規則（backoff）も評価する．
+
+{\bf N4：語義を区別する文章と語彙の整理．}
+単語の文章は，「a photo of a $ \{w\} $」と，単語とWordNetの定義文の先頭を並べた「$ \{w\} $, $ \{$定義文$\} $」の特徴の平均とし，同じ綴りの別の語義を区別する．
+また，外見から判断できない人の役割（skier，passenger等）を表すperson以下の単語を語彙から除く．
+
+{\bf S：アノテーションのスコア．}
+各アノテーション（ボックス$ {\mathbf b} $と単語$ n $の組）に，その正しさの確率を表すスコアを付ける．
+スコアの目的は，新たな分類器を学習することではなく，N3で選んだ粒度の単語とその上位語が正しい確率を利用者に示し，必要な正解率に応じて出力の数と粒度を選べるようにすることである．
+そのため，スコアには(\ref{eq_aggregate})の集約した確率等の既に求めた量のみを用い，それらを正解率に合わせる少数の重みのみを求める\cite{ref_Platt}．
+スコアは，検出のスコア$ c({\mathbf b}) $（YOLO11xの確信度またはOWLv2の物体らしさ$ o({\mathbf b}) $），出力した単語の集約した確率$ q(n \mid {\mathbf b}) $，語彙上の確率の最大値$ \max_w p(w \mid {\mathbf b}) $，そのエントロピー，単語の深さ，およびボックスの出力元を並べた特徴$ {\mathbf f}({\mathbf b}, n) $から
+
+\begin{equation}
+    s({\mathbf b}, n) = \sigma \bigl( {\mathbf w} {\mathbf f}({\mathbf b}, n)^{\top} + w_0 \bigr)
+    \label{eq_score}
+\end{equation}
+
+\noindent
+とする．
+ここで，$ \sigma $はシグモイド関数，$ {\mathbf w} $，$ w_0 $は検証用の画像の出力のうち正誤が判定できるものを教師としたロジスティック回帰の重みである．
+YOLO11xのボックスの$ q $には，OWLv2の領域の特徴によるYOLO11xのクラスの集約した確率を用いる．
+重みは9個のみであり，物体認識モデルと埋め込みモデルの再学習は行わない．
+
+また，粒度を利用者が選べるように，上位語から出力した単語までの経路$ n_1, \ldots, n_k $上の各単語にも，その領域が物体である場合に単語が正しい確率を表すスコア
+
+\begin{equation}
+    r(n_j \mid {\mathbf b}) = \min_{j' \leq j} \sigma \bigl( {\mathbf v} {\mathbf g}({\mathbf b}, n_{j'})^{\top} + v_0 \bigr)
+    \label{eq_word_score}
+\end{equation}
+
+\noindent
+を付ける．
+ここで，$ {\mathbf g}({\mathbf b}, n) $は$ \log q(n \mid {\mathbf b}) $，$ n $の深さ，語彙上の確率の最大値とエントロピーを並べた特徴，$ {\mathbf v} $，$ v_0 $は検証用の画像でGTと対応した領域の経路上の単語の正誤を教師として求めた重みである．
+最小値をとることで，細かい単語ほどスコアが低くなり，利用者はスコアの閾値によって確信できる最も細かい単語を選ぶことができる．
+
+$ \beta $，$ \tau $，規則，文章，語彙，$ K $，$ o_{\min} $は，全て検証用の画像で選ぶ．
+いずれの手順も物体認識モデルと埋め込みモデルの学習を行わない．

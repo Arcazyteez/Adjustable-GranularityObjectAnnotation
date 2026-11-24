@@ -1,0 +1,56 @@
+\relax 
+\citation{ref_DETR}
+\citation{ref_YOLO}
+\citation{ref_CLIP}
+\citation{ref_WordNet}
+\citation{ref_COCO}
+\citation{ref_SigLIP}
+\@writefile{toc}{\contentsline {section}{\numberline {1}はじめに}{1}}
+\@writefile{toc}{\contentsline {section}{\numberline {2}比較する構成}{1}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}ソフトマックスとシグモイドによる確信度}{1}}
+\newlabel{eq_logit}{{1}{1}}
+\newlabel{eq_softmax}{{2}{1}}
+\newlabel{eq_sigmoid}{{3}{1}}
+\citation{ref_SemCor}
+\citation{ref_LVIS}
+\citation{ref_hF}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}YOLOとVLMのスコアの比較による深さ0の決定}{2}}
+\newlabel{eq_cmp}{{4}{2}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}WordNetの同じ深さの語彙}{2}}
+\newlabel{eq_wn_vocab}{{5}{2}}
+\@writefile{toc}{\contentsline {section}{\numberline {3}実験}{2}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}実験条件}{2}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}ソフトマックスとシグモイドの比較}{2}}
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces VLMと正規化関数の比較（テスト用の分割）．Top-1はtest500の深さ0のTop-1正解率，誤枝AUROCは深さ0の正誤を最深段の確信度および累積確信度で区別するAUROC，深さ1はlvis\_testで深さ0が正しいインスタンスの深さ1の正解率と，深さ1の確信度による正誤のAUROC，$ hF $は$ \tau $による停止規則と深さの上限1による停止規則のlvis\_testの階層的F値である．\relax }}{3}}
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{tab_normalization}{{1}{3}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces 確信度による正誤の識別性能．(a)はtest500で深さ0が正しい枝と誤った枝を最深段の確信度で区別するAUROC，(b)はlvis\_testで深さ0が正しいインスタンスの深さ1の正誤を深さ1の確信度で区別するAUROCである．破線は偶然の水準0.5である．\relax }}{3}}
+\newlabel{fig_auroc}{{1}{3}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}YOLOとVLMのスコアの比較}{3}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces lvis\_testにおける階層的再現率$ hR $（横軸）と階層的適合率$ hP $（縦軸）の関係．曲線は累積確信度による停止規則，四角は深さの上限（0～3）による停止規則である．\relax }}{3}}
+\newlabel{fig_stopping_scorers}{{2}{3}}
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces YOLOとVLMのスコアの比較による深さ0の決定（test500）．閾値はYOLO11xの検出スコアの閾値，Top-1の基準はYOLOの語をそのまま用いる場合のTop-1正解率である．\relax }}{3}}
+\newlabel{tab_cmp}{{2}{3}}
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces WordNetの同じ深さの語彙の統計．COCO外はCOCOの80クラス以外の語数，22語はCOCO外の22語のうち語彙に含まれる語数，LVISはlvis\_testのCOCO外の511カテゴリのうち語彙に上位語または自身を持つカテゴリ数である．\relax }}{4}}
+\newlabel{tab_wn_vocab}{{3}{4}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces COCOのTop-1正解率（横軸，test500）とCOCO外の物体の深さ0の正解率（縦軸，lvis\_test）の関係．色はVLMと正規化関数，形は深さ0の決め方を表し，YOLO11xの閾値は0.25である．\relax }}{4}}
+\newlabel{fig_tradeoff}{{3}{4}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}WordNetの同じ深さの語彙}{4}}
+\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces CLIPとソフトマックスを用いるhybridを基準とした3つの変更の効果（テスト用の分割，YOLO11xの閾値0.25）．\relax }}{4}}
+\newlabel{tab_summary}{{4}{4}}
+\@writefile{toc}{\contentsline {section}{\numberline {4}考察}{4}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}現在の構成との比較のまとめ}{4}}
+\bibcite{ref_DETR}{1}
+\bibcite{ref_YOLO}{2}
+\bibcite{ref_CLIP}{3}
+\bibcite{ref_WordNet}{4}
+\bibcite{ref_COCO}{5}
+\bibcite{ref_SigLIP}{6}
+\bibcite{ref_SemCor}{7}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces COCO外の物体の実画像に対する定性結果（SigLIPとシグモイド，YOLO11xの閾値0.25）．上段はCOCO外の22語への切替（hybrid\_switch\_c0.5），下段はWordNetの同じ深さの語彙とスコアの比較（hybrid\_cmp\_wn2）である．深さ0の語の前に，その決定に用いたモデルを``YOLO:''，``VLM:''で示す．画像はWikimedia Commons（CC BY 2.0，CC0，CC BY-SA 3.0/4.0）より取得した．\relax }}{5}}
+\newlabel{fig_qualitative}{{4}{5}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}論文への反映}{5}}
+\@writefile{toc}{\contentsline {section}{\numberline {5}おわりに}{5}}
+\bibcite{ref_LVIS}{8}
+\bibcite{ref_hF}{9}
+\gdef \@abspage@last{6}

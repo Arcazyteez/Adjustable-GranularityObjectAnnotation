@@ -732,6 +732,10 @@ INPUT ./figures/fig_stopping.pdf
 INPUT ./figures/fig_stopping.pdf
 INPUT figures/fig_stopping.pdf
 INPUT extractbb -B cropbox -O figures/fig_stopping.pdf
+INPUT ./figures/fig_siglip_auroc.pdf
+INPUT ./figures/fig_siglip_auroc.pdf
+INPUT figures/fig_siglip_auroc.pdf
+INPUT extractbb -B cropbox -O figures/fig_siglip_auroc.pdf
 INPUT ./sections/05_discussion.tex
 INPUT ./sections/05_discussion.tex
 INPUT ./sections/05_discussion.tex

@@ -27,6 +27,9 @@ EX004 = os.path.join(OUT, "ex004_open_vocab_qualitative", "CLIP-ViT-B32")
 EX005 = os.path.join(OUT, "ex005_coco_val500_yolo_comparison")
 EX006 = os.path.join(OUT, "ex006_coco_val500_yolo_clip_hybrid")
 EX007 = os.path.join(OUT, "ex007_coco_val_hierarchy_eval")
+EX008 = os.path.join(OUT, "ex008_coco_val_siglip_wordnet_root")
+EX008_SCORERS = [("CLIP-ViT-B32_softmax", "CLIP + softmax"), ("SigLIP-ViT-B16_softmax", "SigLIP + softmax"),
+                 ("SigLIP-ViT-B16_sigmoid", "SigLIP + sigmoid")]
 VLMS = ["ResNet50-IN1k", "CLIP-RN50", "CLIP-ViT-B32"]
 VLM_LABELS = ["ResNet50-IN1k", "CLIP-RN50", "CLIP-ViT-B/32"]
 COLORS = ["#8c8c8c", "#4C72B0", "#DD8452"]
@@ -338,6 +341,40 @@ def fig_stopping(split="lvis_test", conditions=(("proposed", 0.5, "Proposed (θ=
     savefig(fig, "fig_stopping")
 
 
+def fig_siglip_auroc(conditions=(("proposed", 0.5, "Proposed (θ=0.5)"), ("hybrid", 0.25, "Hybrid (YOLO 0.25)"))):
+    """
+    VLMと正規化関数ごとに，(a) 深さ0が誤った枝と正しい枝を最深段の確信度で区別するAUROC（test500）と，
+    (b) 深さ0が正しいインスタンスの深さ1の正誤を深さ1の確信度で区別するAUROC（lvis_test）を描画する（ex008）．
+
+    Args:
+        conditions (tuple): (手法, 閾値, 横軸のラベル) の組．
+
+    Returns:
+        None
+    """
+    table = pd.read_csv(os.path.join(EX008, "table_conditions.csv"))
+    depth1 = pd.read_csv(os.path.join(EX008, "table_depth1_auroc.csv"))
+    panels = [(table[table["split"] == "test500"], "auroc_last_conf", "(a) Wrong vs. correct branch"),
+              (depth1[depth1["split"] == "lvis_test"], "auroc", "(b) Depth-1 correct vs. wrong")]
+    fig, axes = plt.subplots(1, 2, figsize=(3.5, 2.3), sharey=True)
+    width = 0.8 / len(EX008_SCORERS)
+    x = np.arange(len(conditions))
+    for ax, (df, col, title) in zip(axes, panels):
+        for i, ((scorer, label), color) in enumerate(zip(EX008_SCORERS, ["#4C72B0", "#DD8452", "#55A868"])):
+            values = [df[(df["scorer"] == scorer) & (df["method"] == m) & np.isclose(df["threshold"], t)][col].iloc[0]
+                      for m, t, _ in conditions]
+            bars = ax.bar(x + (i - 1) * width, values, width, color=color, label=label)
+            ax.bar_label(bars, fmt="%.2f", fontsize=5, padding=1)
+        ax.axhline(0.5, color="gray", ls="--", lw=0.8)
+        ax.set_xticks(x, [c[2].split(" (")[0] for c in conditions])
+        ax.set_ylim(0.3, 0.95)
+        ax.set_title(title, fontsize=7)
+    axes[0].set_ylabel("AUROC")
+    fig.legend(*axes[0].get_legend_handles_labels(), loc="lower center", ncol=3, fontsize=6, frameon=False)
+    fig.tight_layout(rect=(0, 0.08, 1, 1))
+    savefig(fig, "fig_siglip_auroc")
+
+
 if __name__ == "__main__":
     os.makedirs(FIG_DIR, exist_ok=True)
     fig_vlm_comparison()
@@ -349,4 +386,5 @@ if __name__ == "__main__":
     fig_yolo_comparison()
     fig_hybrid_qualitative()
     fig_stopping()
+    fig_siglip_auroc()
     print(sorted(os.listdir(FIG_DIR)))

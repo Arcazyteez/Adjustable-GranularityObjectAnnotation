@@ -1,0 +1,63 @@
+\section{比較する構成}
+\subsection{ソフトマックスとシグモイドによる確信度}
+クロップ$ X $の画像特徴を$ {\mathbf x} \in {\mathbb R}^{1 \times D} $，候補語彙$ {\mathbb V} $に含まれる語$ v $のプロンプト「a photo of a $ v $」のテキスト特徴を$ {\mathbf w}_v \in {\mathbb R}^{1 \times D} $とし，いずれもL2正規化されているとする．
+VLMは語$ v $のロジットを(\ref{eq_logit})で計算する．
+
+\begin{equation}
+    l_v = t \, {\mathbf x} {\mathbf w}_v^{\top} + b
+    \label{eq_logit}
+\end{equation}
+
+\noindent
+ここで$ t > 0 $は学習済みの温度，$ b $は学習済みのバイアスであり，CLIPでは$ b = 0 $である．
+現在の構成は確信度を(\ref{eq_softmax})のソフトマックスで計算し，SigLIPの学習時の目的関数と同じ形のシグモイドでは(\ref{eq_sigmoid})で計算する．
+
+\begin{align}
+    p_v^{\mathrm{soft}} &= \frac{\exp(l_v)}{\sum_{u \in {\mathbb V}} \exp(l_u)}
+    \label{eq_softmax} \\
+    p_v^{\mathrm{sig}} &= \frac{1}{1 + \exp(-l_v)}
+    \label{eq_sigmoid}
+\end{align}
+
+\noindent
+$ p_v^{\mathrm{soft}} $は候補語彙の和が1となるため，候補語彙が1語の段階では必ず1となる．
+一方，$ p_v^{\mathrm{sig}} $は他の語に依存せず，画像と語の対応の度合いを絶対的に表す．
+両者の$ \argmax $は一致するため，各段階で選ばれる語は同じであり，確信度のみが異なる．
+深さ$ d $の累積確信度$ c^{(d)} = \prod_{j=0}^{d} p^{(j)} $が閾値$ \tau $を下回る前の深さで細分化を止め，$ c^{(0)} < \tau $の場合は棄却する停止規則を用いる．
+ここで$ p^{(j)} $は深さ$ j $で選ばれた語の確信度であり，ハイブリッド構成の$ p^{(0)} $はYOLOの検出スコアである．
+VLMはCLIP-ViT-B/32と，同程度の規模のSigLIP-ViT-B/16（WebLIで学習）を用いる．
+モデルの変更による効果と正規化関数の変更による効果を分けるため，CLIPとソフトマックス，SigLIPとソフトマックス，SigLIPとシグモイドの3つの組を比較する．
+
+\subsection{YOLOとVLMのスコアの比較による深さ0の決定}
+YOLOが出力した語を$ v_{\mathrm{Y}} $，検出スコアを$ s_{\mathrm{Y}} $とし，同じボックスのクロップに対するVLMの深さ0の候補語彙$ {\mathbb V}_0 $上の最大確信度の語を$ v_{\mathrm{V}} = \argmax_{v \in {\mathbb V}_0} p_v $とする．
+スコアの比較による構成（以下，hybrid\_cmp）は深さ0の語$ v^{(0)} $を(\ref{eq_cmp})で決める．
+
+\begin{equation}
+    v^{(0)} =
+    \begin{cases}
+        v_{\mathrm{V}} & \mathrm{if} \ p_{v_{\mathrm{V}}} > s_{\mathrm{Y}}, \\
+        v_{\mathrm{Y}} & \mathrm{otherwise}
+    \end{cases}
+    \label{eq_cmp}
+\end{equation}
+
+\noindent
+比較対象は，YOLOの語をそのまま用いる構成（hybrid）と，COCOの80クラスとCOCO外の22語からなる102語上の$ v_{\mathrm{V}} $がCOCO外の語であり，かつ$ p_{v_{\mathrm{V}}} \geq 0.5 $の場合のみ$ v_{\mathrm{V}} $を用いる現在の構成（hybrid\_switch\_c0.5）である．
+hybrid\_cmpでは$ {\mathbb V}_0 $をCOCOの80クラスとする．
+
+\subsection{WordNetの同じ深さの語彙}
+WordNetの根からの深さは上位語の経路によって大きく異なり，例えばdogは深さ8と13の経路を持つ．
+このため，木全体での絶対的な深さを揃えても粒度は揃わない．
+そこで，COCOのカテゴリのSynset $ c $ごとに，最長の上位語の経路で$ k $段上の祖先$ a_k(c) $をとり，$ a_k(c) $からちょうど$ k $段下にあるSynsetの集合を，$ c $と同じ深さの語の集合とする．
+深さ0の候補語彙を(\ref{eq_wn_vocab})で定義する．
+
+\begin{equation}
+    {\mathbb V}_0^{(k)} = {\mathbb C} \cup \Bigl\{ s \in \bigcup_{c \in {\mathbb C}} {\mathcal H}^{k}\bigl(a_k(c)\bigr) \Bigm| \phi(s) \Bigr\}
+    \label{eq_wn_vocab}
+\end{equation}
+
+\noindent
+ここで$ {\mathbb C} $はCOCOの80クラスのSynsetの集合，$ {\mathcal H}^{k}(a) $は$ a $から$ k $段下の下位語の集合である．
+$ \phi(s) $は，$ s $が物理的な実体（physical\_entity.n.01）の下位語であり，$ {\mathbb C} $のいずれかの上位語でも下位語でもなく，SemCor\cite{ref_SemCor}における出現頻度が1以上であることを表す．
+例えば$ k = 2 $では，dogの2段上の祖先carnivoreから2段下のwolfやfoxが含まれ，birdより深いpenguinや，birdより浅いanimalは含まれない．
+$ k = 2 $の語彙を用い，(\ref{eq_cmp})の$ {\mathbb V}_0 $を$ {\mathbb V}_0^{(2)} $とした構成をhybrid\_cmp\_wn2，DETRの検出に対し$ {\mathbb V}_0^{(2)} $から深さ0を選ぶ構成をproposed\_wn2と呼ぶ．

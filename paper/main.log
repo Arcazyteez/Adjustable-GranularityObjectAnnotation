@@ -1,4 +1,4 @@
-This is e-pTeX, Version 3.141592653-p3.9.1-210218-2.6 (utf8.euc) (TeX Live 2022/dev/Debian) (preloaded format=platex 2026.10.4)  10 NOV 2026 13:00
+This is e-pTeX, Version 3.141592653-p3.9.1-210218-2.6 (utf8.euc) (TeX Live 2022/dev/Debian) (preloaded format=platex 2026.10.4)  11 NOV 2026 09:36
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -656,12 +656,17 @@ Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
 ]) (./sections/02_related_work.tex
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
 LaTeX Font Info:    Trying to load font information for T1+lmtt on input line 1
 3.
 
 (/usr/share/texmf/tex/latex/lm/t1lmtt.fd
 File: t1lmtt.fd 2009/10/30 v1.6 Font defs for Latin Modern
-)) (./sections/03_method.tex [2]
+)) (./sections/03_method.tex
+Underfull \vbox (badness 10000) has occurred while \output is active []
+
+ [2]
 LaTeX Font Info:    Trying to load font information for TS1+lmr on input line 8
 .
 
@@ -697,41 +702,38 @@ File: figures/fig_open_vocab.pdf Graphic file (type pdf)
 <figures/fig_open_vocab.pdf>
 File: figures/fig_coco_qualitative.pdf Graphic file (type pdf)
 <figures/fig_coco_qualitative.pdf>
-
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
 File: figures/fig_yolo_comparison.pdf Graphic file (type pdf)
 <figures/fig_yolo_comparison.pdf>
  [7]
+Underfull \vbox (badness 5245) has occurred while \output is active []
+
 File: figures/fig_yolo_open_vocab.pdf Graphic file (type pdf)
 <figures/fig_yolo_open_vocab.pdf>
 
-Underfull \vbox (badness 5245) has occurred while \output is active []
-
-
-Underfull \vbox (badness 4779) has occurred while \output is active []
+Underfull \vbox (badness 10000) has occurred while \output is active []
 
  [8]
 File: figures/fig_hybrid_qualitative.pdf Graphic file (type pdf)
 <figures/fig_hybrid_qualitative.pdf>
 
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
- [9]
-Underfull \vbox (badness 2359) has occurred while \output is active []
+[9]
+Underfull \vbox (badness 4518) has occurred while \output is active []
 
  [10]
 File: figures/fig_stopping.pdf Graphic file (type pdf)
 <figures/fig_stopping.pdf>
-)
-(./sections/05_discussion.tex [11]
-Underfull \vbox (badness 10000) has occurred while \output is active []
 
- [12])
-(./sections/06_conclusion.tex) (./sections/07_references.tex
+[11]
+File: figures/fig_siglip_auroc.pdf Graphic file (type pdf)
+<figures/fig_siglip_auroc.pdf>
+ [12]) (./sections/05_discussion.tex [13]) (./sections/06_conclusion.tex
+[14]
+Underfull \vbox (badness 2173) has occurred while \output is active []
+
+)
+(./sections/07_references.tex
 LaTeX Font Info:    Kanji font shape `JY1/mc/m/it' undefined
 (Font)              No change on input line 8.
- [13]
 LaTeX Font Info:    Kanji font shape `JY1/mc/m/it' undefined
 (Font)              No change on input line 13.
 LaTeX Font Info:    Kanji font shape `JY1/mc/m/it' undefined
@@ -742,6 +744,7 @@ LaTeX Font Info:    Kanji font shape `JY1/mc/m/it' undefined
 (Font)              No change on input line 28.
 LaTeX Font Info:    Kanji font shape `JY1/mc/m/it' undefined
 (Font)              No change on input line 38.
+ [15]
 LaTeX Font Info:    Kanji font shape `JY1/mc/m/it' undefined
 (Font)              No change on input line 43.
 LaTeX Font Info:    Kanji font shape `JY1/mc/m/it' undefined
@@ -766,14 +769,20 @@ LaTeX Font Info:    Kanji font shape `JY1/mc/m/it' undefined
 (Font)              No change on input line 88.
 LaTeX Font Info:    Kanji font shape `JY1/mc/m/it' undefined
 (Font)              No change on input line 93.
-) [14] (./main.aux) ) 
+LaTeX Font Info:    Kanji font shape `JY1/mc/m/it' undefined
+(Font)              No change on input line 98.
+LaTeX Font Info:    Kanji font shape `JY1/mc/m/it' undefined
+(Font)              No change on input line 103.
+) [16
+
+] (./main.aux) ) 
 Here is how much of TeX's memory you used:
- 15585 strings out of 478741
- 313747 string characters out of 5860982
- 583535 words of memory out of 5000000
- 33643 multiletter control sequences out of 15000+600000
+ 15598 strings out of 478741
+ 314022 string characters out of 5860982
+ 590535 words of memory out of 5000000
+ 33655 multiletter control sequences out of 15000+600000
  560647 words of font info for 135 fonts, out of 8000000 for 9000
  929 hyphenation exceptions out of 8191
- 84i,15n,89p,512b,821s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 84i,15n,89p,495b,821s stack positions out of 5000i,500n,10000p,200000b,80000s
 
-Output written on main.dvi (14 pages, 141144 bytes).
+Output written on main.dvi (16 pages, 162544 bytes).

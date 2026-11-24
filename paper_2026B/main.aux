@@ -1,0 +1,109 @@
+\relax 
+\citation{ref_YOLO}
+\citation{ref_DETR}
+\citation{ref_CLIP}
+\citation{ref_SigLIP}
+\citation{ref_WordNet}
+\citation{ref_OWLViT}
+\citation{ref_OWLv2}
+\citation{ref_LVIS}
+\@writefile{toc}{\contentsline {section}{\numberline {1}はじめに}{1}}
+\citation{ref_YOLO}
+\citation{ref_YOLO11}
+\citation{ref_DETR}
+\citation{ref_COCO}
+\citation{ref_CLIP}
+\citation{ref_SigLIP}
+\citation{ref_OWLViT}
+\citation{ref_GroundingDINO}
+\citation{ref_WordNet}
+\citation{ref_Hedging}
+\citation{ref_CHiLS}
+\citation{ref_Platt}
+\citation{ref_Calibration}
+\citation{ref_Calibration}
+\@writefile{toc}{\contentsline {section}{\numberline {2}関連研究}{2}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}物体認識モデル}{2}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}文章・画像埋め込みモデル}{2}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}WordNet}{2}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.4}階層的な分類と確信度}{2}}
+\@writefile{toc}{\contentsline {section}{\numberline {3}提案手法}{2}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}基本の手法：切り抜き画像による粒度可変アノテーション}{2}}
+\newlabel{eq_crop}{{1}{2}}
+\newlabel{eq_similarity}{{2}{2}}
+\newlabel{eq_argmax}{{3}{2}}
+\citation{ref_YOLO11}
+\citation{ref_DETR}
+\citation{ref_OpenCLIP}
+\citation{ref_OWLv2}
+\@writefile{loa}{\contentsline {algorithm}{\numberline {1}{\ignorespaces 粒度可変アノテーション\relax }}{3}}
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{alg_granular}{{1}{3}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}基本の手法の実装}{3}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}提案手法：学習時に無い物体への粒度可変アノテーション}{3}}
+\newlabel{eq_add}{{4}{3}}
+\newlabel{eq_prob}{{5}{3}}
+\newlabel{eq_aggregate}{{6}{3}}
+\newlabel{eq_greedy}{{7}{3}}
+\citation{ref_Platt}
+\citation{ref_Hungarian}
+\newlabel{eq_score}{{8}{4}}
+\newlabel{eq_word_score}{{9}{4}}
+\@writefile{toc}{\contentsline {section}{\numberline {4}実験}{4}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}共通設定}{4}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}予備実験：COCOの80クラスによる基本の手法の評価}{4}}
+\newlabel{eq_metrics}{{10}{4}}
+\citation{ref_LVIS}
+\citation{ref_hF}
+\citation{ref_hF}
+\citation{ref_Bootstrap}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces 初期の語彙をWordNetの上位語6語とした定性評価の結果（上段：YOLO11x + CLIP，下段：YOLO11x + SigLIP，いずれも$ \theta = -1 $）．各ボックスに出力した単語の列を粗い語から順に示す．\relax }}{5}}
+\newlabel{fig_qualitative}{{1}{5}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}COCO外の物体に対する評価の方法}{5}}
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces 加えた領域のうちCOCO外の物体と重なるものについて，OWLv2の1位の単語が正しかった割合（テスト用）．括弧内は正しい上位語・下位語を含む割合である．LVISの語彙は正解の語を必ず含む．\relax }}{6}}
+\newlabel{tab_diag}{{1}{6}}
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces STを用いた場合のテスト用の画像における評価．各行は1つ上の行の設定に変更を加えたものである．$ hF_{\mathrm   {fed}} $は設定の選択に用いた指標である．\relax }}{6}}
+\newlabel{tab_open}{{2}{6}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.4}分類の能力と設定の影響}{6}}
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces 命名の方法ごとのテスト用の画像における評価．スコアは(8\@setref@ {})である．LVISの語彙は評価のカテゴリ名を事前に与える場合（参考）である．AP$ _{\mathrm   {fed}} $は上限の目安である．\relax }}{6}}
+\newlabel{tab_baseline}{{3}{6}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.5}命名の方法の比較}{6}}
+\citation{ref_Calibration}
+\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces スコアの種類ごとのテスト用の画像における評価．$ ^\dagger $は加えた領域のみ積とし，YOLO11xのボックスは$ c $とした場合である．AP$ _{\mathrm   {fed}} $は上限の目安である．\relax }}{7}}
+\newlabel{tab_score}{{4}{7}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.6}アノテーションのスコアの評価}{7}}
+\@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces 加えた領域の出力の種類の割合（\%，テスト用）．「全て」は$ K = 100 $の全ての出力，「閾値」は検証用の画像で$ hF_{\mathrm   {strict}} $が最大となる(8\@setref@ {})の閾値以上の出力である．\relax }}{7}}
+\newlabel{tab_errors}{{5}{7}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.7}誤りの分解}{7}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces STを用いた場合のテスト用の画像におけるスコアの評価．(a)スコアの順に出力を加えた場合の$ hR $と$ hP_{\mathrm   {strict}} $，(b)アノテーションのスコアの値（横軸）と正解率（縦軸）の関係，(c)GTと対応した加えた領域の経路上の各単語の集約した確率$ q $と(9\@setref@ {})のスコアの値と正解率の関係．点線は完全に校正された場合である．\relax }}{8}}
+\newlabel{fig_score}{{2}{8}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces テスト用の画像における出力の例（上段：ST，下段：FT）．青はYOLO11xのボックスとクラス，赤は加えた領域のうち(8\@setref@ {})のスコアが高い上位8件と，3.3節の方法で選んだ単語，数値はそのスコアである．\relax }}{8}}
+\newlabel{fig_qualitative_open}{{3}{8}}
+\@writefile{lot}{\contentsline {table}{\numberline {6}{\ignorespaces {\color  {red}全体らしさの特徴を(8\@setref@ {})に加えた場合のAP$ _{\mathrm   {strict}} $（テスト用，greedy）．括弧内は加えない場合との差の95\%信頼区間である．}\relax }}{8}}
+\newlabel{tab_whole}{{6}{8}}
+\bibcite{ref_YOLO}{1}
+\@writefile{toc}{\contentsline {section}{\numberline {5}考察}{9}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}予備実験から分かること}{9}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}上位語への集約の効果と限界}{9}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}実用上の水準と誤りの要因}{9}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.4}今後の課題}{9}}
+\@writefile{toc}{\contentsline {section}{\numberline {6}おわりに}{9}}
+\bibcite{ref_DETR}{2}
+\bibcite{ref_CLIP}{3}
+\bibcite{ref_SigLIP}{4}
+\bibcite{ref_WordNet}{5}
+\bibcite{ref_COCO}{6}
+\bibcite{ref_YOLO11}{7}
+\bibcite{ref_OWLViT}{8}
+\bibcite{ref_GroundingDINO}{9}
+\bibcite{ref_OpenCLIP}{10}
+\bibcite{ref_Hungarian}{11}
+\bibcite{ref_OWLv2}{12}
+\bibcite{ref_LVIS}{13}
+\bibcite{ref_hF}{14}
+\bibcite{ref_Hedging}{15}
+\bibcite{ref_CHiLS}{16}
+\bibcite{ref_Platt}{17}
+\bibcite{ref_Calibration}{18}
+\bibcite{ref_Bootstrap}{19}
+\gdef \@abspage@last{10}

@@ -1,0 +1,142 @@
+\section{提案手法}
+\subsection{全体設計}
+画像$ {\mathbf X} \in {\mathbb R}^{H \times W \times 3} $が与えられたとき，本手法は，物体領域のボックスの集合$ {\mathbb B} = \{ {\mathbf b}_1, \ldots, {\mathbf b}_K \} $を1回の推論で検出し，各ボックス$ {\mathbf b}_k \in {\mathbb R}^4 $について粗い粒度から細かい粒度への単語の列$ ( \hat{v}_k^{(0)}, \hat{v}_k^{(1)}, \ldots ) $を出力する．
+ここで，$ H $，$ W $は画像の高さと幅，$ K $は検出数である．
+検出とカテゴリのアノテーションを分離するため，候補語彙や粒度を変更しても検出を再実行する必要はない．
+本稿で比較する構成の概要を図\ref{fig_pipeline}に示す．
+
+\begin{figure}[t]
+    \centering
+    \resizebox{\columnwidth}{!}{%
+    \begin{tikzpicture}[
+            node distance=3mm and 4mm,
+            box/.style={draw, rounded corners, align=center, font=\scriptsize, minimum height=6mm, inner sep=2pt},
+            arr/.style={-{Stealth[length=1.6mm]}}
+        ]
+        \node[box] (img) {画像 ${\mathbf X}$};
+        \node[box, below=4mm of img] (yolo) {YOLO\\（ハイブリッド）};
+        \node[box, left=4mm of yolo] (detr) {DETR\\（提案手法）};
+        \node[box, right=4mm of yolo] (owl) {OWLv2\\（補完）};
+        \node[box, below=6mm of yolo] (crop) {クロップ ${\mathbf X}_k = \mathrm{Pad}(\mathrm{Crop}({\mathbf X}, {\mathbf b}_k))$};
+        \node[box, below=of crop] (root) {深さ0の語 $ \hat{v}_k^{(0)} $：YOLOの語，またはSigLIPで${\mathbb V}_0$から選択};
+        \node[box, below=of root] (wn) {$ d = 1, 2, \ldots $ について，SigLIPで\\${\mathbb V}_k^{(d)} = \mathrm{Hyponyms}(\mathrm{synset}(\hat{v}_k^{(d-1)}))$ から選択};
+        \node[box, below=of wn] (out) {出力 $ ( \hat{v}_k^{(0)}, \ldots, \hat{v}_k^{(d^\ast)} ) $（累積確信度で停止）};
+        \draw[arr] (img) -- (detr);
+        \draw[arr] (img) -- (yolo);
+        \draw[arr] (img) -- (owl);
+        \draw[arr] (detr) -- (crop);
+        \draw[arr] (yolo) -- (crop);
+        \draw[arr] (owl) -- node[right, font=\tiny, xshift=1mm] {YOLOと重ならない領域} (crop);
+        \draw[arr] (crop) -- (root);
+        \draw[arr] (root) -- (wn);
+        \draw[arr] (wn) -- (out);
+    \end{tikzpicture}%
+    }
+    \caption{本稿で比較する構成の概要．提案手法はDETR，ハイブリッド手法はYOLOのボックスを用い，補完ではYOLOのボックスと重ならないOWLv2の領域を加える．いずれも検出は1回のみ行い，同一のクロップに対してSigLIPによる分類をWordNetの下位語を候補語彙として繰り返す．}
+    \label{fig_pipeline}
+\end{figure}
+
+\subsection{物体領域の検出}
+提案手法では，COCOで学習済みのDETR（ResNet-50）\cite{ref_DETR}を，出力するクラスを用いずにボックスの検出器として用いる．
+DETRの各ボックスのスコアは「物体なし」以外のクラスの最大確率であり，閾値$ \theta $を超えるボックスを用いる．
+ハイブリッド手法では，COCOで学習済みのYOLO11x\cite{ref_YOLO11}を用い，検出スコア$ s_k $が閾値を超えるボックスと，そのクラス$ y_k $を用いる．
+各ボックスのクロップは，VLMの前処理で物体の両端が失われないよう，黒で正方形にパディングした$ {\mathbf X}_k = \mathrm{Pad}(\mathrm{Crop}({\mathbf X}, {\mathbf b}_k)) $とする．
+ここで，$ \mathrm{Crop}({\mathbf X}, {\mathbf b}) $は画像$ {\mathbf X} $から$ {\mathbf b} $の範囲を切り出す関数，$ \mathrm{Pad}(\cdot) $は長辺に合わせて黒で埋めて正方形にする関数である．
+
+\subsection{SigLIPによるカテゴリのアノテーション}
+カテゴリのアノテーションには，SigLIP\cite{ref_SigLIP}の画像エンコーダ$ g_I $とテキストエンコーダ$ g_T $を用いる．
+候補語彙$ {\mathbb V} $の語$ v $を``a photo of a $ \{v\} $''というプロンプト$ t(v) $に埋め込み，クロップ$ {\mathbf X}_k $に対するロジットを
+
+\begin{equation}
+    l_v({\mathbf X}_k) = \alpha \cos \bigl( g_I({\mathbf X}_k), g_T(t(v)) \bigr) + \beta
+    \label{eq_logit}
+\end{equation}
+
+\noindent
+とする．
+ここで，$ \cos(\cdot, \cdot) $はコサイン類似度，$ \alpha $と$ \beta $は学習済みの温度とバイアスである．
+アノテーションする語と確信度を
+
+\begin{equation}
+    \hat{v}_k = \argmax_{v \in {\mathbb V}} l_v({\mathbf X}_k), \quad
+    p_k = \sigma \bigl( l_{\hat{v}_k}({\mathbf X}_k) \bigr)
+    \label{eq_annotation}
+\end{equation}
+
+\noindent
+とする．
+ここで，$ \sigma(x) = 1 / (1 + \exp(-x)) $はシグモイド関数である．
+$ p_k $は他の候補語に依存しないため，候補語彙に画像と対応する語が無い場合に小さくなる．
+比較として，候補語彙の中で正規化するソフトマックス$ \exp(l_{\hat{v}_k}) / \sum_{u \in {\mathbb V}} \exp(l_u) $を確信度とする場合も評価する．
+いずれの場合も$ \hat{v}_k $は同じであり，確信度のみが異なる．
+
+\subsection{WordNetによる粒度の変更}
+深さ0の語$ \hat{v}_k^{(0)} $に対応するWordNetのSynsetを$ \mathrm{synset}(\hat{v}_k^{(0)}) $とし，Synset $ s $の直接の下位語の集合を$ \mathrm{Hyponyms}(s) $とする．
+深さ$ d \geq 1 $の候補語彙を
+
+\begin{equation}
+    {\mathbb V}_k^{(d)} = \mathrm{Hyponyms} \bigl( \mathrm{synset}( \hat{v}_k^{(d-1)} ) \bigr)
+    \label{eq_hyponym}
+\end{equation}
+
+\noindent
+とし，同一のクロップ$ {\mathbf X}_k $に(\ref{eq_annotation})を適用して$ \hat{v}_k^{(d)} $と$ p_k^{(d)} $を得る．
+この処理を$ {\mathbb V}_k^{(d)} = \emptyset $となるまで繰り返す．
+ただし，深い段階ほど誤りが増えるため，累積確信度
+
+\begin{equation}
+    c_k^{(d)} = \prod_{j=0}^{d} p_k^{(j)}
+    \label{eq_cumulative}
+\end{equation}
+
+\noindent
+が閾値$ \tau $以上である最も深い段階$ d^\ast $までを出力し，$ c_k^{(0)} < \tau $の場合はアノテーションを棄却する．
+$ \tau $は検証用の画像で選ぶ．
+COCOの各カテゴリ名に対応するSynsetは定義文を確認して手動で定め，下位語のSynsetの先頭のレンマ名を候補語とする．
+
+\subsection{比較する3つの構成}
+YOLO単体は，YOLOのクラス$ y_k $のみを出力し，粒度を変更しない．
+提案手法は，DETRのボックスに対し，COCOの80クラスの集合$ {\mathbb V}^{(0)} $から(\ref{eq_annotation})で深さ0の語を選び，(\ref{eq_hyponym})で粒度を変更する．
+ハイブリッド手法は，YOLOのボックスに対し$ \hat{v}_k^{(0)} = y_k $，$ p_k^{(0)} = s_k $とし，(\ref{eq_hyponym})で粒度を変更する．
+ハイブリッド手法では，深さ0の精度はYOLOと同じであり，深さ1以降の推定のみをSigLIPとWordNetが担う．
+
+\subsection{COCO外の物体への拡張}
+ハイブリッド手法はYOLOが検出したボックスのみを扱うため，YOLOが検出しないCOCO外の物体は粒度の変更の対象にならない．
+そこで，クラス非依存の検出器Dの出力$ {\mathbb B}_{\mathrm{D}} $のうち，YOLOのボックス$ {\mathbb B}_{\mathrm{Y}} $のいずれともIoUが0.5未満のボックスを，スコアの上位$ K_{\mathrm{add}} $件まで加える．
+
+\begin{equation}
+    {\mathbb B} = {\mathbb B}_{\mathrm{Y}} \cup \mathrm{Top}_{K_{\mathrm{add}}} \Bigl\{ {\mathbf b} \in {\mathbb B}_{\mathrm{D}} \Bigm| \max_{{\mathbf b}' \in {\mathbb B}_{\mathrm{Y}}} \mathrm{IoU}({\mathbf b}, {\mathbf b}') < 0.5 \Bigr\}
+    \label{eq_supplement}
+\end{equation}
+
+\noindent
+YOLOのボックスはハイブリッド手法と同じく扱い，加えたボックスは，深さ0の語をSigLIPで候補語彙$ {\mathbb V}_0 $から選び，(\ref{eq_hyponym})で粒度を変更する．
+$ {\mathbb V}_0 $には，再学習を行わずにCOCO外の語を含めるため，WordNetにおいてCOCOのカテゴリと同じ深さにある語を加える．
+WordNetの根からの深さは上位語の経路によって異なり，例えばdogは深さ8と13の経路を持つため，木全体で深さを揃えても粒度は揃わない．
+そこで，COCOのカテゴリのSynset $ c $ごとに，最長の上位語の経路で2段上の祖先$ a(c) $をとり，$ a(c) $からちょうど2段下にあるSynsetを$ c $と同じ深さの語として
+
+\begin{equation}
+    {\mathbb V}_0 = {\mathbb C} \cup \Bigl\{ s \in \bigcup_{c \in {\mathbb C}} {\mathcal H}^{2} \bigl( a(c) \bigr) \Bigm| \phi(s) \Bigr\}
+    \label{eq_wordnet_vocab}
+\end{equation}
+
+\noindent
+とする．
+ここで，$ {\mathbb C} $はCOCOの80クラスのSynsetの集合，$ {\mathcal H}^{2}(a) $は$ a $から2段下の下位語の集合である．
+$ \phi(s) $は，$ s $が物理的な実体（physical\_entity.n.01）の下位語であり，$ {\mathbb C} $のいずれの上位語・下位語でもなく，SemCor\cite{ref_SemCor}における出現頻度が1以上であることを表す．
+例えばdogに対しては，2段上の祖先carnivoreから2段下にあるwolfやfoxが含まれ，birdより深いpenguinや浅いanimalは含まれない．
+$ {\mathbb V}_0 $はCOCOの80語を含む681語である．
+
+\begingroup
+\color{red}
+\subsection{加えた候補の棄却と上から下への命名}
+(\ref{eq_supplement})で加えた候補には，GTと対応しない領域や物体の部分が多く含まれる．
+そこで，加えた候補$ {\mathbf b}_k $を，OWLv2の物体らしさのスコアが閾値$ o $未満の場合，出力する語のシグモイドの確信度が閾値$ \gamma $未満の場合，および面積の80\%以上が自身より大きい他の出力ボックスに含まれる場合に棄却する．
+
+また，加えた候補には，最初から細かい粒度の語彙$ {\mathbb V}_0 $の中で最も近い語を1つ選ぶのではなく，粗い語から順に選ぶ命名を用いる．
+WordNetの最上位の語（thing，object等）はVLMが判別できないため，COCO train2017のキャプションに300回以上出現し，深さが5以上で，下位に語として使えるSynsetを3つ以上持つSynsetと，COCOの80クラスのSynsetからなる274語を出発点の候補$ {\mathbb R} $とする．
+ここで，語として使えるSynsetとは，いずれかのレンマがキャプションに5回以上出現し，WordNetにおいて他のSynsetの部分として登録されていないSynsetである．
+(\ref{eq_annotation})により$ {\mathbb R} $から深さ0の語を選んだ後，語として使えるSynsetとその上位語のみからなるWordNetの木（8121ノード）で，子の中から(\ref{eq_annotation})により1つずつ選んで葉までたどる．
+各段階で選んだ語の兄弟の中でのソフトマックスの確信度が閾値$ \tau_s $未満となった段階で止め，1つ前の段階の語を出力する．
+すなわち，語の選択と停止には兄弟の間での比較に適するソフトマックスを，候補の棄却には画像と語の対応の強さを表すシグモイドを用いる．
+\endgroup

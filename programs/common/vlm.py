@@ -3,6 +3,7 @@
 
 - ResNet50IN1k: ImageNet-1k学習済みの閉域モデル．候補語をレンマ化してクラス名と完全一致した場合のみそのクラス確率をスコアとし，一致しない語には0を割り当てる．
 - CLIPModel: open_clipのOpenAI学習済みCLIP．"a photo of a {w}" のプロンプトで画像特徴とのコサイン類似度をソフトマックスで正規化する．
+- SigLIPModel: open_clipのSigLIP（ViT-B-16-SigLIP，webli）．ロジット l_v = t cos + b をシグモイドまたはソフトマックスで確信度に変換する．
 """
 import numpy as np
 import open_clip
@@ -173,17 +174,59 @@ class CLIPModel:
         return logits.softmax(dim=-1).cpu().numpy()
 
 
+class SigLIPModel(CLIPModel):
+    """open_clipによるSigLIP（ViT-B-16-SigLIP，webli）のゼロショット分類．テキスト・画像特徴の計算はCLIPModelと共通．"""
+
+    def __init__(self, arch="ViT-B-16-SigLIP", pretrained="webli", device="cuda", template="a photo of a {}"):
+        """
+        モデルを読み込む．
+
+        Args:
+            arch (str): open_clipのアーキテクチャ名．
+            pretrained (str): 学習済みの重みの名前．
+            device (str): 推論デバイス．
+            template (str): プロンプトのテンプレート．
+        """
+        self.model, _, self.preprocess = open_clip.create_model_and_transforms(arch, pretrained=pretrained)
+        self.model = self.model.eval().to(device)
+        self.tokenizer = open_clip.get_tokenizer(arch)
+        self.name = "SigLIP-ViT-B16"
+        self.device = device
+        self.template = template
+        self._text_cache = {}
+
+
+@torch.no_grad()
+def vlm_logits(vlm, image_features, vocab):
+    """
+    画像特徴と候補語彙のロジット l_v = t cos(x, w_v) + b を計算する（CLIPは b = 0）．
+
+    Args:
+        vlm (CLIPModel | SigLIPModel): VLM．
+        image_features (torch.Tensor): L2正規化済みの画像特徴（D または N×D）．
+        vocab (list[str]): 候補語彙（長さV）．
+
+    Returns:
+        torch.Tensor: ロジット（V または N×V）．
+    """
+    logits = vlm.model.logit_scale.exp() * image_features @ vlm.text_features(vocab).T
+    bias = getattr(vlm.model, "logit_bias", None)
+    return logits + bias if bias is not None else logits
+
+
 def load_vlm(name, device="cuda"):
     """
     名前からVLMを生成する．
 
     Args:
-        name (str): "ResNet50-IN1k"，"CLIP-RN50"，"CLIP-ViT-B32" のいずれか．
+        name (str): "ResNet50-IN1k"，"CLIP-RN50"，"CLIP-ViT-B32"，"SigLIP-ViT-B16" のいずれか．
         device (str): 推論デバイス．
 
     Returns:
-        ResNet50IN1k | CLIPModel: score(images, vocab) を持つモデル．
+        ResNet50IN1k | CLIPModel | SigLIPModel: score(images, vocab) を持つモデル．
     """
     if name == "ResNet50-IN1k":
         return ResNet50IN1k(device)
+    if name == "SigLIP-ViT-B16":
+        return SigLIPModel(device=device)
     return CLIPModel({"CLIP-RN50": "RN50", "CLIP-ViT-B32": "ViT-B-32"}[name], device)

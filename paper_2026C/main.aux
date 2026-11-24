@@ -1,0 +1,98 @@
+\relax 
+\citation{ref_YOLO}
+\citation{ref_DETR}
+\citation{ref_COCO}
+\citation{ref_prev}
+\citation{ref_prevVG}
+\citation{ref_WordNet}
+\citation{ref_CLIP}
+\citation{ref_OWLv2}
+\citation{ref_AlphaCLIP}
+\citation{ref_prevVG}
+\citation{ref_VG}
+\citation{ref_YOLO}
+\citation{ref_DETR}
+\citation{ref_CLIP}
+\citation{ref_OWLViT}
+\citation{ref_OWLv2}
+\citation{ref_AlphaCLIP}
+\@writefile{toc}{\contentsline {section}{\numberline {1}はじめに}{1}}
+\@writefile{toc}{\contentsline {section}{\numberline {2}関連研究}{1}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}物体検出とオープンボキャブラリ}{1}}
+\citation{ref_VG}
+\citation{ref_prevVG}
+\citation{ref_CHiLS}
+\citation{ref_hier}
+\citation{ref_YOLO11}
+\citation{ref_DETR}
+\citation{ref_prevVG}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces 提案するモデルの流れ．網掛けは粒度を決める段階である．\relax }}{2}}
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{fig_pipeline}{{1}{2}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}語彙と意味の階層}{2}}
+\@writefile{toc}{\contentsline {section}{\numberline {3}提案手法}{2}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}全体の流れ}{2}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}検出と領域の特徴}{2}}
+\newlabel{eq_prob}{{1}{2}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}語彙の木と部分木の確率の合計}{2}}
+\newlabel{sec_vocab}{{3.3}{2}}
+\newlabel{eq_vocab}{{2}{2}}
+\newlabel{eq_mass}{{3}{2}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}深さ0のラベルと残すボックス}{2}}
+\citation{ref_prevVG}
+\citation{ref_prev}
+\citation{ref_LVIS}
+\citation{ref_OWLv2}
+\citation{ref_YOLO11}
+\citation{ref_DETR}
+\citation{ref_AlphaCLIP}
+\citation{ref_CLIP}
+\citation{ref_prevVG}
+\newlabel{eq_score}{{4}{3}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.5}部分木の確率の合計による粒度の変更}{3}}
+\newlabel{eq_output}{{5}{3}}
+\@writefile{toc}{\contentsline {section}{\numberline {4}実験}{3}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}共通設定}{3}}
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces 本稿の表で用いる記号と評価指標．\relax }}{3}}
+\newlabel{tab_metrics}{{1}{3}}
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces 検出器のみの比較（テスト用の画像）．$ R_{\rm  N} $はLVISの注釈がある474枚のCOCO外の物体2687件に対する値，その他はCOCOのGT 3458件に対する値である．記号は表1\@setref@ {}による（$ N $：ボックス数，$ R_{\rm  all} $：再現率，$ R_{\rm  per} $：人物の再現率，$ R_{\rm  oth} $：人物以外の再現率，$ E $：GTに当たらない割合，$ R_{\rm  N} $：COCO外の物体の再現率，$ t $：時間）．\relax }}{4}}
+\newlabel{tab_detector}{{2}{4}}
+\newlabel{eq_hier}{{6}{4}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}検出器の比較}{4}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}分類器の比較}{4}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.4}語彙の木による粒度の判断}{4}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces (a)(b) LVISの2148枚における1枚あたりのボックス数と検出の再現率（上位$ k $個のボックス，前稿の評価），(c) モデルの検出器と分類器を替えたテスト用の画像の$ F $（COCOの80クラスのF値）．\relax }}{5}}
+\newlabel{fig_detector}{{2}{5}}
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces モデルの検出器を替えた比較（テスト用の画像，分類器はAlpha-CLIP（crop），残すボックスは式(4\@setref@ {})の規則）．記号は表1\@setref@ {}による（$ N $：残した数，Top-1：ラベルの正解率，$ P $：適合率，$ R $：再現率，$ F $：F値，$ hF $：細かい粒度の階層的F値，Acc：命名の正解率，Fine：正しくCOCOのクラスより細かい語を出力した割合，$ R_{\rm  p} $：人物の再現率，$ R_{\rm  N} $：残したボックスのCOCO外の物体の再現率）．\relax }}{5}}
+\newlabel{tab_pipeline}{{3}{5}}
+\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces 分類器の比較（テスト用の画像）．GTのボックスの列は検出の影響を除いた値であり，Top-1とTop-5はCOCOの80クラスの正解率，$ hF $は部分木の確率の合計による命名の階層的F値である（--：未評価）．右の4列は各検出器と組み合わせた場合の$ F $（COCOの80クラスのF値）である．\relax }}{5}}
+\newlabel{tab_classifier}{{4}{5}}
+\@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces GTのボックスに対する命名の手順の比較（テスト用の画像）．$ hF $：細かい粒度の階層的F値，Acc：命名の正解率，Fine：正しくCOCOのクラスより細かい語を出力した割合．\relax }}{5}}
+\newlabel{tab_naming}{{5}{5}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces 人物のGTのボックスで正しい経路を1段ずつ与えた場合の，各段の正しい子の選択の正解率（Top-1）．\relax }}{5}}
+\newlabel{fig_step}{{3}{5}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.5}定性評価}{5}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces テスト用の画像に対する出力の例．(a) OWLv2，(b) YOLO11xのボックス，(c) DETRのボックス（分類器はいずれもAlpha-CLIP（crop）），(d) YOLO11x単体．(a)～(c)のラベルは式(5\@setref@ {})の出力であり，括弧内は深さ0のラベル$ c_k $である．\relax }}{6}}
+\newlabel{fig_qualitative}{{4}{6}}
+\@writefile{toc}{\contentsline {section}{\numberline {5}考察}{6}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}検出器の選択}{6}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}分類器の選択}{6}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}語彙の木による粒度の判断}{6}}
+\bibcite{ref_YOLO}{1}
+\bibcite{ref_DETR}{2}
+\bibcite{ref_COCO}{3}
+\bibcite{ref_prev}{4}
+\bibcite{ref_prevVG}{5}
+\bibcite{ref_WordNet}{6}
+\bibcite{ref_CLIP}{7}
+\bibcite{ref_OWLv2}{8}
+\bibcite{ref_AlphaCLIP}{9}
+\bibcite{ref_VG}{10}
+\bibcite{ref_OWLViT}{11}
+\bibcite{ref_CHiLS}{12}
+\bibcite{ref_hier}{13}
+\bibcite{ref_YOLO11}{14}
+\bibcite{ref_LVIS}{15}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.4}本稿の限界と今後の課題}{7}}
+\@writefile{toc}{\contentsline {section}{\numberline {6}おわりに}{7}}
+\gdef \@abspage@last{7}

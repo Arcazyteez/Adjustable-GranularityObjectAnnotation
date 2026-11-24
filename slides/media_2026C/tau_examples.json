@@ -1,0 +1,806 @@
+{
+ "embedder": "AlphaCLIP-ViT-B16_context1.5",
+ "T": 1.0,
+ "taus": [
+  0.5,
+  0.3,
+  0.2,
+  0.1,
+  0.05,
+  0.02
+ ],
+ "examples": [
+  {
+   "image_id": 579070,
+   "gt_index": 12,
+   "class": "cup",
+   "fine": "dixie_cup.n.01",
+   "box": [
+    145.6699981689453,
+    230.85000610351562,
+    167.3800048828125,
+    258.2900085449219
+   ],
+   "outputs": [
+    {
+     "tau": 0.5,
+     "synset": null,
+     "word": null
+    },
+    {
+     "tau": 0.3,
+     "synset": "container.n.01",
+     "word": "container"
+    },
+    {
+     "tau": 0.2,
+     "synset": "container.n.01",
+     "word": "container"
+    },
+    {
+     "tau": 0.1,
+     "synset": "cup.n.01",
+     "word": "cup"
+    },
+    {
+     "tau": 0.05,
+     "synset": "dixie_cup.n.01",
+     "word": "paper cup"
+    },
+    {
+     "tau": 0.02,
+     "synset": "dixie_cup.n.01",
+     "word": "paper cup"
+    }
+   ]
+  },
+  {
+   "image_id": 579070,
+   "gt_index": 13,
+   "class": "cup",
+   "fine": "dixie_cup.n.01",
+   "box": [
+    194.07000732421875,
+    219.7100067138672,
+    216.0399932861328,
+    246.47000122070312
+   ],
+   "outputs": [
+    {
+     "tau": 0.5,
+     "synset": null,
+     "word": null
+    },
+    {
+     "tau": 0.3,
+     "synset": null,
+     "word": null
+    },
+    {
+     "tau": 0.2,
+     "synset": "container.n.01",
+     "word": "container"
+    },
+    {
+     "tau": 0.1,
+     "synset": "cup.n.01",
+     "word": "cup"
+    },
+    {
+     "tau": 0.05,
+     "synset": "cup.n.01",
+     "word": "cup"
+    },
+    {
+     "tau": 0.02,
+     "synset": "dixie_cup.n.01",
+     "word": "paper cup"
+    }
+   ]
+  },
+  {
+   "image_id": 579070,
+   "gt_index": 14,
+   "class": "cup",
+   "fine": "dixie_cup.n.01",
+   "box": [
+    438.05999755859375,
+    329.760009765625,
+    466.82000732421875,
+    371.79998779296875
+   ],
+   "outputs": [
+    {
+     "tau": 0.5,
+     "synset": null,
+     "word": null
+    },
+    {
+     "tau": 0.3,
+     "synset": "container.n.01",
+     "word": "container"
+    },
+    {
+     "tau": 0.2,
+     "synset": "cup.n.01",
+     "word": "cup"
+    },
+    {
+     "tau": 0.1,
+     "synset": "dixie_cup.n.01",
+     "word": "paper cup"
+    },
+    {
+     "tau": 0.05,
+     "synset": "dixie_cup.n.01",
+     "word": "paper cup"
+    },
+    {
+     "tau": 0.02,
+     "synset": "dixie_cup.n.01",
+     "word": "paper cup"
+    }
+   ]
+  },
+  {
+   "image_id": 579070,
+   "gt_index": 15,
+   "class": "cup",
+   "fine": "dixie_cup.n.01",
+   "box": [
+    5.239999771118164,
+    280.9200134277344,
+    34.77000045776367,
+    314.1700134277344
+   ],
+   "outputs": [
+    {
+     "tau": 0.5,
+     "synset": null,
+     "word": null
+    },
+    {
+     "tau": 0.3,
+     "synset": "container.n.01",
+     "word": "container"
+    },
+    {
+     "tau": 0.2,
+     "synset": "cup.n.01",
+     "word": "cup"
+    },
+    {
+     "tau": 0.1,
+     "synset": "dixie_cup.n.01",
+     "word": "paper cup"
+    },
+    {
+     "tau": 0.05,
+     "synset": "dixie_cup.n.01",
+     "word": "paper cup"
+    },
+    {
+     "tau": 0.02,
+     "synset": "dixie_cup.n.01",
+     "word": "paper cup"
+    }
+   ]
+  },
+  {
+   "image_id": 579070,
+   "gt_index": 17,
+   "class": "cup",
+   "fine": "dixie_cup.n.01",
+   "box": [
+    379.9700012207031,
+    332.7699890136719,
+    411.1000061035156,
+    374.07000732421875
+   ],
+   "outputs": [
+    {
+     "tau": 0.5,
+     "synset": null,
+     "word": null
+    },
+    {
+     "tau": 0.3,
+     "synset": null,
+     "word": null
+    },
+    {
+     "tau": 0.2,
+     "synset": "container.n.01",
+     "word": "container"
+    },
+    {
+     "tau": 0.1,
+     "synset": "cup.n.01",
+     "word": "cup"
+    },
+    {
+     "tau": 0.05,
+     "synset": "dixie_cup.n.01",
+     "word": "paper cup"
+    },
+    {
+     "tau": 0.02,
+     "synset": "dixie_cup.n.01",
+     "word": "paper cup"
+    }
+   ]
+  },
+  {
+   "image_id": 579070,
+   "gt_index": 18,
+   "class": "cup",
+   "fine": "dixie_cup.n.01",
+   "box": [
+    458.1600036621094,
+    243.6300048828125,
+    502.70001220703125,
+    305.7699890136719
+   ],
+   "outputs": [
+    {
+     "tau": 0.5,
+     "synset": null,
+     "word": null
+    },
+    {
+     "tau": 0.3,
+     "synset": "container.n.01",
+     "word": "container"
+    },
+    {
+     "tau": 0.2,
+     "synset": "container.n.01",
+     "word": "container"
+    },
+    {
+     "tau": 0.1,
+     "synset": "cup.n.01",
+     "word": "cup"
+    },
+    {
+     "tau": 0.05,
+     "synset": "dixie_cup.n.01",
+     "word": "paper cup"
+    },
+    {
+     "tau": 0.02,
+     "synset": "dixie_cup.n.01",
+     "word": "paper cup"
+    }
+   ]
+  },
+  {
+   "image_id": 205647,
+   "gt_index": 0,
+   "class": "truck",
+   "fine": "delivery_truck.n.01",
+   "box": [
+    47.7599983215332,
+    207.3800048828125,
+    524.4400024414062,
+    320.1000061035156
+   ],
+   "outputs": [
+    {
+     "tau": 0.5,
+     "synset": "container.n.01",
+     "word": "container"
+    },
+    {
+     "tau": 0.3,
+     "synset": "truck.n.01",
+     "word": "truck"
+    },
+    {
+     "tau": 0.2,
+     "synset": "delivery_truck.n.01",
+     "word": "delivery truck"
+    },
+    {
+     "tau": 0.1,
+     "synset": "delivery_truck.n.01",
+     "word": "delivery truck"
+    },
+    {
+     "tau": 0.05,
+     "synset": "delivery_truck.n.01",
+     "word": "delivery truck"
+    },
+    {
+     "tau": 0.02,
+     "synset": "delivery_truck.n.01",
+     "word": "delivery truck"
+    }
+   ]
+  },
+  {
+   "image_id": 149622,
+   "gt_index": 0,
+   "class": "bird",
+   "fine": "owl.n.01",
+   "box": [
+    154.89999389648438,
+    151.0,
+    290.30999755859375,
+    332.20001220703125
+   ],
+   "outputs": [
+    {
+     "tau": 0.5,
+     "synset": "animal.n.01",
+     "word": "animal"
+    },
+    {
+     "tau": 0.3,
+     "synset": "bird.n.01",
+     "word": "bird"
+    },
+    {
+     "tau": 0.2,
+     "synset": "owl.n.01",
+     "word": "owl"
+    },
+    {
+     "tau": 0.1,
+     "synset": "owl.n.01",
+     "word": "owl"
+    },
+    {
+     "tau": 0.05,
+     "synset": "owl.n.01",
+     "word": "owl"
+    },
+    {
+     "tau": 0.02,
+     "synset": "owl.n.01",
+     "word": "owl"
+    }
+   ]
+  },
+  {
+   "image_id": 492992,
+   "gt_index": 1,
+   "class": "cow",
+   "fine": "bull.n.01",
+   "box": [
+    46.900001525878906,
+    286.2099914550781,
+    427.0,
+    632.4099731445312
+   ],
+   "outputs": [
+    {
+     "tau": 0.5,
+     "synset": null,
+     "word": null
+    },
+    {
+     "tau": 0.3,
+     "synset": "mammal.n.01",
+     "word": "mammal"
+    },
+    {
+     "tau": 0.2,
+     "synset": "mammal.n.01",
+     "word": "mammal"
+    },
+    {
+     "tau": 0.1,
+     "synset": "cattle.n.01",
+     "word": "cow"
+    },
+    {
+     "tau": 0.05,
+     "synset": "cattle.n.01",
+     "word": "cow"
+    },
+    {
+     "tau": 0.02,
+     "synset": "bull.n.01",
+     "word": "bull"
+    }
+   ]
+  },
+  {
+   "image_id": 405205,
+   "gt_index": 1,
+   "class": "truck",
+   "fine": "trailer_truck.n.01",
+   "box": [
+    500.54998779296875,
+    115.79000091552734,
+    549.75,
+    283.8599853515625
+   ],
+   "outputs": [
+    {
+     "tau": 0.5,
+     "synset": null,
+     "word": null
+    },
+    {
+     "tau": 0.3,
+     "synset": "container.n.01",
+     "word": "container"
+    },
+    {
+     "tau": 0.2,
+     "synset": "truck.n.01",
+     "word": "truck"
+    },
+    {
+     "tau": 0.1,
+     "synset": "trailer_truck.n.01",
+     "word": "tractor trailer"
+    },
+    {
+     "tau": 0.05,
+     "synset": "trailer_truck.n.01",
+     "word": "tractor trailer"
+    },
+    {
+     "tau": 0.02,
+     "synset": "trailer_truck.n.01",
+     "word": "tractor trailer"
+    }
+   ]
+  },
+  {
+   "image_id": 426203,
+   "gt_index": 0,
+   "class": "person",
+   "fine": "skateboarder.n.01",
+   "box": [
+    176.86000061035156,
+    116.29000091552734,
+    320.4599914550781,
+    308.3900146484375
+   ],
+   "outputs": [
+    {
+     "tau": 0.5,
+     "synset": "person.n.01",
+     "word": "person"
+    },
+    {
+     "tau": 0.3,
+     "synset": "skater.n.01",
+     "word": "skater"
+    },
+    {
+     "tau": 0.2,
+     "synset": "skateboarder.n.01",
+     "word": "skateboarder"
+    },
+    {
+     "tau": 0.1,
+     "synset": "skateboarder.n.01",
+     "word": "skateboarder"
+    },
+    {
+     "tau": 0.05,
+     "synset": "skateboarder.n.01",
+     "word": "skateboarder"
+    },
+    {
+     "tau": 0.02,
+     "synset": "skateboarder.n.01",
+     "word": "skateboarder"
+    }
+   ]
+  },
+  {
+   "image_id": 434204,
+   "gt_index": 1,
+   "class": "person",
+   "fine": "skateboarder.n.01",
+   "box": [
+    67.02999877929688,
+    1.159999966621399,
+    100.16000366210938,
+    44.439998626708984
+   ],
+   "outputs": [
+    {
+     "tau": 0.5,
+     "synset": null,
+     "word": null
+    },
+    {
+     "tau": 0.3,
+     "synset": null,
+     "word": null
+    },
+    {
+     "tau": 0.2,
+     "synset": "person.n.01",
+     "word": "person"
+    },
+    {
+     "tau": 0.1,
+     "synset": "person.n.01",
+     "word": "person"
+    },
+    {
+     "tau": 0.05,
+     "synset": "skater.n.01",
+     "word": "skater"
+    },
+    {
+     "tau": 0.02,
+     "synset": "skateboarder.n.01",
+     "word": "skateboarder"
+    }
+   ]
+  },
+  {
+   "image_id": 499622,
+   "gt_index": 1,
+   "class": "person",
+   "fine": "bull.n.05",
+   "box": [
+    151.97999572753906,
+    41.34000015258789,
+    273.2099914550781,
+    336.2900085449219
+   ],
+   "outputs": [
+    {
+     "tau": 0.5,
+     "synset": null,
+     "word": null
+    },
+    {
+     "tau": 0.3,
+     "synset": "person.n.01",
+     "word": "person"
+    },
+    {
+     "tau": 0.2,
+     "synset": "person.n.01",
+     "word": "person"
+    },
+    {
+     "tau": 0.1,
+     "synset": "policeman.n.01",
+     "word": "policeman"
+    },
+    {
+     "tau": 0.05,
+     "synset": "bull.n.05",
+     "word": "cop"
+    },
+    {
+     "tau": 0.02,
+     "synset": "bull.n.05",
+     "word": "cop"
+    }
+   ]
+  },
+  {
+   "image_id": 450559,
+   "gt_index": 0,
+   "class": "person",
+   "fine": "skateboarder.n.01",
+   "box": [
+    71.68000030517578,
+    34.130001068115234,
+    303.7900085449219,
+    360.1099853515625
+   ],
+   "outputs": [
+    {
+     "tau": 0.5,
+     "synset": "person.n.01",
+     "word": "person"
+    },
+    {
+     "tau": 0.3,
+     "synset": "skater.n.01",
+     "word": "skater"
+    },
+    {
+     "tau": 0.2,
+     "synset": "skateboarder.n.01",
+     "word": "skateboarder"
+    },
+    {
+     "tau": 0.1,
+     "synset": "skateboarder.n.01",
+     "word": "skateboarder"
+    },
+    {
+     "tau": 0.05,
+     "synset": "skateboarder.n.01",
+     "word": "skateboarder"
+    },
+    {
+     "tau": 0.02,
+     "synset": "skateboarder.n.01",
+     "word": "skateboarder"
+    }
+   ]
+  },
+  {
+   "image_id": 533816,
+   "gt_index": 6,
+   "class": "person",
+   "fine": "tennis_player.n.01",
+   "box": [
+    351.6700134277344,
+    0.0,
+    392.45001220703125,
+    137.02000427246094
+   ],
+   "outputs": [
+    {
+     "tau": 0.5,
+     "synset": null,
+     "word": null
+    },
+    {
+     "tau": 0.3,
+     "synset": "person.n.01",
+     "word": "person"
+    },
+    {
+     "tau": 0.2,
+     "synset": "person.n.01",
+     "word": "person"
+    },
+    {
+     "tau": 0.1,
+     "synset": "player.n.01",
+     "word": "player"
+    },
+    {
+     "tau": 0.05,
+     "synset": "tennis_player.n.01",
+     "word": "tennis player"
+    },
+    {
+     "tau": 0.02,
+     "synset": "tennis_player.n.01",
+     "word": "tennis player"
+    }
+   ]
+  },
+  {
+   "image_id": 133778,
+   "gt_index": 0,
+   "class": "cow",
+   "fine": "cow.n.01",
+   "box": [
+    58.95000076293945,
+    76.7300033569336,
+    568.8400268554688,
+    380.79998779296875
+   ],
+   "outputs": [
+    {
+     "tau": 0.5,
+     "synset": "animal.n.01",
+     "word": "animal"
+    },
+    {
+     "tau": 0.3,
+     "synset": "bovine.n.01",
+     "word": "bovine"
+    },
+    {
+     "tau": 0.2,
+     "synset": "cattle.n.01",
+     "word": "cow"
+    },
+    {
+     "tau": 0.1,
+     "synset": "cattle.n.01",
+     "word": "cow"
+    },
+    {
+     "tau": 0.05,
+     "synset": "cow.n.01",
+     "word": "cow"
+    },
+    {
+     "tau": 0.02,
+     "synset": "cow.n.01",
+     "word": "cow"
+    }
+   ]
+  },
+  {
+   "image_id": 133778,
+   "gt_index": 1,
+   "class": "cow",
+   "fine": "cow.n.01",
+   "box": [
+    110.20999908447266,
+    162.17999267578125,
+    453.8299865722656,
+    398.82000732421875
+   ],
+   "outputs": [
+    {
+     "tau": 0.5,
+     "synset": "animal.n.01",
+     "word": "animal"
+    },
+    {
+     "tau": 0.3,
+     "synset": "mammal.n.01",
+     "word": "mammal"
+    },
+    {
+     "tau": 0.2,
+     "synset": "cattle.n.01",
+     "word": "cow"
+    },
+    {
+     "tau": 0.1,
+     "synset": "cattle.n.01",
+     "word": "cow"
+    },
+    {
+     "tau": 0.05,
+     "synset": "cow.n.01",
+     "word": "cow"
+    },
+    {
+     "tau": 0.02,
+     "synset": "cow.n.01",
+     "word": "cow"
+    }
+   ]
+  },
+  {
+   "image_id": 332318,
+   "gt_index": 7,
+   "class": "cow",
+   "fine": "cow.n.01",
+   "box": [
+    62.45000076293945,
+    389.1700134277344,
+    83.66000366210938,
+    398.79998779296875
+   ],
+   "outputs": [
+    {
+     "tau": 0.5,
+     "synset": null,
+     "word": null
+    },
+    {
+     "tau": 0.3,
+     "synset": "mammal.n.01",
+     "word": "mammal"
+    },
+    {
+     "tau": 0.2,
+     "synset": "mammal.n.01",
+     "word": "mammal"
+    },
+    {
+     "tau": 0.1,
+     "synset": "cattle.n.01",
+     "word": "cow"
+    },
+    {
+     "tau": 0.05,
+     "synset": "cattle.n.01",
+     "word": "cow"
+    },
+    {
+     "tau": 0.02,
+     "synset": "cow.n.01",
+     "word": "cow"
+    }
+   ]
+  }
+ ]
+}

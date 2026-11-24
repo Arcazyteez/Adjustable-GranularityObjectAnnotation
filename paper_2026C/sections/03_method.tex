@@ -1,0 +1,106 @@
+\section{提案手法}
+\subsection{全体の流れ}
+図\ref{fig_pipeline}に提案するモデルの流れを示す．
+画像$ {\mathbf X} $からOWLv2の物体らしさでボックスを1回の推論で検出し，各ボックスの領域の特徴をAlpha-CLIPで求める．
+次に，\rev{WordNet$ \cap $VGの木}の全ての語の確率を求め，部分木ごとに確率を合計する．
+部分木の確率の合計から，ボックスを残すかと深さ0のラベル（COCOのクラス）を決め，確信度に応じた深さの語を出力する．
+出力した語から根までの経路を切り詰めることで，任意の粗さの語も得られる．
+いずれの段階も追加の学習を行わない．
+
+\begin{figure}[t]
+\centering
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}[node distance=2.5mm, every node/.style={font=\scriptsize}, box/.style={draw, rounded corners=1pt, align=center, minimum height=6mm, inner sep=1.5pt}, >=Stealth]
+\node[box] (img) {画像\\$ {\mathbf X} $};
+\node[box, right=of img] (owl) {OWLv2\\物体らしさ$ o_k $};
+\node[box, right=of owl] (alpha) {Alpha-CLIP\\領域の特徴};
+\node[box, right=of alpha] (prob) {\rev{WordNet$ \cap $VG}\\の確率$ p_w $};
+\node[box, below=4mm of prob] (mass) {部分木の\\合計$ m_u $};
+\node[box, left=of mass] (rej) {ラベル$ c_k $\\ボックスの選択};
+\node[box, left=of rej, fill=yellow!20] (dedup) {出力の深さ\\$ u^{*}_k $};
+\node[box, left=of dedup] (out) {出力\\（粒度可変）};
+\draw[->] (img) -- (owl); \draw[->] (owl) -- (alpha); \draw[->] (alpha) -- (prob); \draw[->] (prob) -- (mass);
+\draw[->] (mass) -- (rej); \draw[->] (rej) -- (dedup); \draw[->] (dedup) -- (out);
+\end{tikzpicture}}
+\caption{提案するモデルの流れ．網掛けは粒度を決める段階である．}
+\label{fig_pipeline}
+\end{figure}
+
+\subsection{検出と領域の特徴}
+OWLv2の物体らしさのスコア$ o_k $の降順に，クラス非依存のNMS（IoU 0.5）を適用したボックス$ {\mathbf b}_k $を用いる．
+1画像あたりの平均のボックス数$ B $が所定の値になるよう，検証用の画像のスコアから物体らしさの閾値を定める．
+検出器の比較では，OWLv2をCOCOで学習したYOLO11x\cite{ref_YOLO11}またはDETR\cite{ref_DETR}に置き換える．
+この場合も各検出器が出力するクラスは用いず，ボックスと検出スコアのみを用い，検出スコアを$ o_k $とする．
+したがって，検出器を置き換えても，命名と粒度の変更は\rev{WordNet$ \cap $VGの木}で行い，再学習は必要としない．
+
+各ボックスの領域の特徴は，Alpha-CLIPの画像エンコーダで求める．
+入力には，ボックスに合わせて切り抜いた画像を長辺に合わせて黒で埋めた正方形（以下，crop）と，ボックスの長辺の1.5倍の正方形の窓（以下，context）の2通りを用いる．
+αチャネルには，ボックスの内側を1，外側を0とするマスクを与える．
+分類器の比較では，Alpha-CLIPをCLIP（ViT-B/32）に置き換え，cropの画像をαチャネルなしで入力する．
+語$ w $の確率は，CLIPと同じく
+
+\begin{equation}
+    p_w({\mathbf b}_k) = \frac{\exp\bigl(t \cos(g_I({\mathbf b}_k), g_T(w))\bigr)}{\sum_{w' \in {\mathbb W}} \exp\bigl(t \cos(g_I({\mathbf b}_k), g_T(w'))\bigr)}
+    \label{eq_prob}
+\end{equation}
+
+\noindent
+とする．
+ここで，$ g_I $と$ g_T $は画像と文章のエンコーダ，$ g_T(w) $はプロンプト``a photo of a \{$w$\}''の特徴，$ t $は学習済みの温度，$ {\mathbb W} $は語彙である．
+
+\subsection{語彙の木と部分木の確率の合計}\label{sec_vocab}
+前稿\cite{ref_prevVG}と同じく，VGの物体の注釈のSynset $ s $の出現回数を$ n(s) $とし，語彙を
+
+\begin{equation}
+    {\mathbb V} = \{ s \mid n(s) \geq 10,\ d(s) \geq 5 \} \cup {\mathbb C}
+    \label{eq_vocab}
+\end{equation}
+
+\noindent
+とする．
+ここで，$ d(s) $はWordNetの根からの最短の深さ，$ {\mathbb C} $はCOCOの80クラスのSynsetの集合である．
+プロンプトには，各Synsetに対してVGの注釈者が最も多く用いた名前を用いる．
+語彙の語は，上位語をたどって至る段数が最小の最上位の枠（$ J = 40 $）に割り当て，同じ枠の中で上位語をたどって最初に出会う語彙の語を親とする．
+親が無い語は枠を親とし，どの枠にも含まれない語は仮想的な枠にまとめる．
+\rev{語はVGに現れるWordNetのSynset，親子はWordNetの上下関係であるため，これをWordNet$ \cap $VGの木と呼ぶ．}
+
+ノード$ u $の部分木に含まれる語の集合を$ {\mathbb D}(u) $とし，部分木の確率の合計を
+
+\begin{equation}
+    m_u({\mathbf b}_k) = \sum_{w \in {\mathbb D}(u)} p_w({\mathbf b}_k)
+    \label{eq_mass}
+\end{equation}
+
+\noindent
+とする．
+深さ0のラベルの決定には$ T = 1 $（式(\ref{eq_prob})のまま）の確率を用いる．
+COCOの80クラスのノードの部分木には，そのクラスの下位語の語彙の語が含まれる．
+例えばpersonの部分木には，man，woman，player，skierなど136語が含まれる．
+
+\subsection{深さ0のラベルと残すボックス}
+各ボックスの深さ0のラベル$ c_k $と，ボックスを残すかを決めるスコア$ r_k $を，COCOのクラスのノードの部分木の確率の合計を用いて
+
+\begin{equation}
+    c_k = \argmax_{c \in {\mathbb C}} m_c({\mathbf b}_k), \quad r_k = m_{c_k}({\mathbf b}_k) \, o_k
+    \label{eq_score}
+\end{equation}
+
+\noindent
+とする．
+VLMが人物の領域で持ち物の名前の確率を最大にしても，人物の多くの下位語の確率がpersonの部分木に集まるため，人物のボックスにpersonのラベルを付けることができる．
+$ r_k $の降順に，同じラベルのボックスとIoUが0.5以上のボックスと，面積の80\%以上が同じラベルのボックスに含まれるボックスを除き，$ r_k \geq \theta $のボックスを残す．
+本稿ではこの規則を全ての構成に共通に用い，残すボックスを決める規則の設計は今後の課題とする．
+
+\subsection{部分木の確率の合計による粒度の変更}
+残したボックスの出力する語は，前稿\cite{ref_prevVG}と同じく，温度$ T $の確率から求めた$ m_u $が閾値$ \tau $以上のノードのうち，深さが最大（同じ深さなら$ m_u $が最大）のノード
+
+\begin{equation}
+    u^{*}_k = \argmax_{u: m_u \geq \tau} \bigl(\mathrm{depth}(u), m_u({\mathbf b}_k)\bigr)
+    \label{eq_output}
+\end{equation}
+
+\noindent
+とする．
+確信度が低い場合はより粗いノードが選ばれ，出力したノードから根までの経路を切り詰めることで，粗い粒度のカテゴリも得られる．
+例えば，テニス選手の領域でtennis playerの確率が$ \tau $を超えればtennis playerを出力し，下位語の確率が分散してどの語も$ \tau $を超えない場合でも，部分木の合計が大きいpersonを出力する．
+このように，語彙の木の構造と確率の合計のみで粒度を決めるため，語彙や木を差し替えても再学習は必要としない．

@@ -1,0 +1,90 @@
+\relax 
+\citation{ref_YOLO}
+\citation{ref_DETR}
+\citation{ref_COCO}
+\citation{ref_WordNet}
+\citation{ref_SigLIP}
+\citation{ref_LVIS}
+\citation{ref_OWLv2}
+\citation{ref_GroundingDINO}
+\@writefile{toc}{\contentsline {section}{\numberline {1}はじめに}{1}}
+\citation{ref_YOLO}
+\citation{ref_DETR}
+\citation{ref_COCO}
+\citation{ref_CLIP}
+\citation{ref_SigLIP}
+\citation{ref_OWLViT}
+\citation{ref_OWLv2}
+\citation{ref_GroundingDINO}
+\citation{ref_DETR}
+\citation{ref_YOLO11}
+\citation{ref_SigLIP}
+\@writefile{toc}{\contentsline {section}{\numberline {2}関連研究}{2}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}閉域的な物体検出モデル}{2}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}オープンボキャブラリ物体検出とVLM}{2}}
+\@writefile{toc}{\contentsline {section}{\numberline {3}提案手法}{2}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}全体設計}{2}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces 本稿で比較する構成の概要．提案手法はDETR，ハイブリッド手法はYOLOのボックスを用い，補完ではYOLOのボックスと重ならないOWLv2の領域を加える．いずれも検出は1回のみ行い，同一のクロップに対してSigLIPによる分類をWordNetの下位語を候補語彙として繰り返す．\relax }}{2}}
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{fig_pipeline}{{1}{2}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}物体領域の検出}{2}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}SigLIPによるカテゴリのアノテーション}{2}}
+\newlabel{eq_logit}{{1}{2}}
+\newlabel{eq_annotation}{{2}{2}}
+\citation{ref_SemCor}
+\citation{ref_LVIS}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}WordNetによる粒度の変更}{3}}
+\newlabel{eq_hyponym}{{3}{3}}
+\newlabel{eq_cumulative}{{4}{3}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.5}比較する3つの構成}{3}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.6}COCO外の物体への拡張}{3}}
+\newlabel{eq_supplement}{{5}{3}}
+\newlabel{eq_wordnet_vocab}{{6}{3}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.7}加えた候補の棄却と上から下への命名}{3}}
+\@writefile{toc}{\contentsline {section}{\numberline {4}実験}{3}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}共通設定}{3}}
+\citation{ref_hF}
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces test500における深さ0の評価．閾値は提案手法ではDETRの$ \theta $，YOLO11x単体とハイブリッド手法ではYOLO11xの検出スコアの閾値，$ n $は評価インスタンス数，$ N_h $は深さ0が正解で粒度を変更できたインスタンス数である．\relax }}{4}}
+\newlabel{tab_coco}{{1}{4}}
+\newlabel{eq_hierarchical_pr}{{7}{4}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}COCOにおける3つの構成の比較}{4}}
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces lvis\_testにおける深さ1以降の評価．深さ1は深さ0が正解のインスタンスにおける深さ1の正解率，到達はLVISのSynsetまで細分化できた割合（停止なし）である．$ hF $の停止なしは下位語の集合が空になるまで出力した場合，$ \tau $はlvis\_devで選んだ$ \tau $による停止規則である．\relax }}{4}}
+\newlabel{tab_lvis}{{2}{4}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces lvis\_testにおける階層的再現率$ hR $（横軸）と階層的適合率$ hP $（縦軸）の関係（確信度はシグモイド）．曲線は累積確信度による停止規則，四角は深さの上限（0～3）による停止規則，星印はlvis\_devで選んだ$ \tau $である．\relax }}{4}}
+\newlabel{fig_lvis_stopping}{{2}{4}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}LVISによる細かい粒度の評価}{4}}
+\citation{ref_OWLv2}
+\citation{ref_GroundingDINO}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces lvis\_testにおける1画像あたりのボックス数（横軸）と再現率（縦軸）の関係．(a)はCOCOの物体，(b)はCOCO外の物体であり，黒の記号はYOLO11x（閾値0.25）とDETR（$ \theta = 0.5 $）の出力である．\relax }}{5}}
+\newlabel{fig_recall}{{3}{5}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.4}COCO外の物体の検出}{5}}
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces lvis\_testにおけるCOCO外の物体の検出，命名，粒度の変更（$ K_{\mathrm   {add}} = 10 $）．COCOはCOCOの物体のうち深さ0が正解の割合，検出・命名・到達はCOCO外の物体12655件に対する割合であり，括弧内はLVISのカテゴリ名を語彙とした場合である．\relax }}{5}}
+\newlabel{tab_open}{{3}{5}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.5}COCO外の物体の命名と粒度の変更}{5}}
+\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces lvis\_testにおけるCOCO外の物体の命名の改善．追加は1画像あたりに加えた候補の数，命名はCOCO外の物体12655件のうち深さ0が正しい上位語となった割合，$ hR $はCOCO外の物体の階層的再現率，適合率は加えた候補のうちGTと対応し正しい上位語を出力した割合である．\relax }}{6}}
+\newlabel{tab_naming}{{4}{6}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.6}COCO外の物体の命名の改善}{6}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces lvis\_testにおける1画像あたりに加えた候補の数（横軸）と，(a) COCO外の物体の階層的再現率，(b) 加えた候補のうちGTと対応し正しい上位語を出力した割合（縦軸）の関係．各点は予算$ B = 1, 2, 5 $でlvis\_devにより選んだ閾値の結果である．\relax }}{6}}
+\newlabel{fig_budget}{{4}{6}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.7}定性的結果}{6}}
+\@writefile{toc}{\contentsline {section}{\numberline {5}考察}{6}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}3つの構成の使い分け}{6}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces COCO外の物体を主な被写体とする実画像に対する，YOLO11xにOWLv2の候補を加えた構成の結果．青はYOLO11x（閾値0.25）のボックスとハイブリッド手法による粒度の変更，赤は加えた候補のうち物体らしさのスコアの上位3件とSigLIPによる命名と粒度の変更である．画像はWikimedia Commons（CC BY-SA 3.0/4.0）より取得した．\relax }}{7}}
+\newlabel{fig_qualitative}{{5}{7}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}COCO外の物体への対応}{7}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}今後の課題}{7}}
+\@writefile{toc}{\contentsline {section}{\numberline {6}おわりに}{7}}
+\bibcite{ref_YOLO}{1}
+\bibcite{ref_DETR}{2}
+\bibcite{ref_COCO}{3}
+\bibcite{ref_WordNet}{4}
+\bibcite{ref_SigLIP}{5}
+\bibcite{ref_LVIS}{6}
+\bibcite{ref_OWLv2}{7}
+\bibcite{ref_GroundingDINO}{8}
+\bibcite{ref_CLIP}{9}
+\bibcite{ref_OWLViT}{10}
+\bibcite{ref_YOLO11}{11}
+\bibcite{ref_SemCor}{12}
+\bibcite{ref_hF}{13}
+\gdef \@abspage@last{8}
